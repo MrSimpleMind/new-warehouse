@@ -1,9 +1,8 @@
 <?php
 /**
- * Logica per la dashboard principale dei tablet
+ * Logica per la dashboard principale dei tablet - VERSIONE CORRETTA
  * 
- * Contiene lo shortcode [tablet_dashboard] e tutte le funzioni
- * per visualizzare e gestire la tabella dei tablet con form modal integrate.
+ * Fix per pulsanti modal che non funzionano
  */
 
 // Previeni accesso diretto
@@ -34,7 +33,8 @@ function mwm_tablet_dashboard_shortcode($atts) {
         
         <!-- Azioni Rapide -->
         <div class="mwm-quick-actions" style="margin-bottom: 20px;">
-            <button class="mwm-btn mwm-btn-primary" id="mwm-add-tablet-btn">
+            <!-- FIX: Aggiunto type="button" per prevenire submit form -->
+            <button type="button" class="mwm-btn mwm-btn-primary" id="mwm-add-tablet-btn">
                 ➕ Aggiungi Nuovo Tablet
             </button>
         </div>
@@ -88,7 +88,10 @@ function mwm_tablet_dashboard_shortcode($atts) {
                     <?php if (empty($tablets)): ?>
                         <tr>
                             <td colspan="9" class="mwm-no-data">
-                                Nessun tablet trovato. <button class="mwm-btn mwm-btn-primary" onclick="WarehouseManager.openAddTabletModal()">Aggiungi il primo tablet</button>
+                                Nessun tablet trovato. 
+                                <button type="button" class="mwm-btn mwm-btn-primary" onclick="WarehouseManager.openAddTabletModal()">
+                                    Aggiungi il primo tablet
+                                </button>
                             </td>
                         </tr>
                     <?php else: ?>
@@ -175,7 +178,7 @@ function mwm_get_all_tablets_for_dashboard() {
 }
 
 /**
- * Genera riga singola tablet per la tabella
+ * Genera riga singola tablet per la tabella - VERSIONE CORRETTA
  */
 function mwm_generate_tablet_row($tablet) {
     $tablet_id = $tablet->ID;
@@ -233,13 +236,14 @@ function mwm_generate_tablet_row($tablet) {
         </td>
         <td class="mwm-actions-col">
             <div class="mwm-actions">
-                <button class="mwm-btn mwm-btn-small mwm-btn-view" data-tablet-id="<?php echo esc_attr($tablet_id); ?>" title="Visualizza dettagli">
+                <!-- FIX: Aggiunto type="button" per tutti i pulsanti modal -->
+                <button type="button" class="mwm-btn mwm-btn-small mwm-btn-view" data-tablet-id="<?php echo esc_attr($tablet_id); ?>" title="Visualizza dettagli">
                     👁️
                 </button>
-                <button class="mwm-btn mwm-btn-small mwm-btn-edit" data-tablet-id="<?php echo esc_attr($tablet_id); ?>" title="Modifica tablet">
+                <button type="button" class="mwm-btn mwm-btn-small mwm-btn-edit" data-tablet-id="<?php echo esc_attr($tablet_id); ?>" title="Modifica tablet">
                     ✏️
                 </button>
-                <button class="mwm-btn mwm-btn-small mwm-btn-movement" data-tablet-id="<?php echo esc_attr($tablet_id); ?>" title="Registra movimento">
+                <button type="button" class="mwm-btn mwm-btn-small mwm-btn-movement" data-tablet-id="<?php echo esc_attr($tablet_id); ?>" title="Registra movimento">
                     📦
                 </button>
             </div>
