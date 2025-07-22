@@ -1,10 +1,10 @@
 # My Warehouse Manager
 
-Plugin WordPress per la gestione completa di un magazzino tablet con dashboard interattiva, form di modifica e cronologia movimenti.
+Plugin WordPress per la gestione completa di un magazzino tablet con dashboard interattiva, form di modifica in modal e gestione destinazioni unificate.
 
 ## 📋 Panoramica
 
-Il plugin **My Warehouse Manager** è stato progettato specificamente per gestire l'inventario di tablet in un'organizzazione, tracciando assegnazioni, vendite, rientri e manutenzioni. Offre un'interfaccia moderna ispirata ad AirDroid Business con funzionalità complete per la gestione quotidiana.
+Il plugin **My Warehouse Manager** è stato progettato specificamente per gestire l'inventario di tablet in un'organizzazione, tracciando assegnazioni, vendite, rientri e manutenzioni tramite una dashboard centralizzata con form modal integrate.
 
 ## ✨ Funzionalità Principali
 
@@ -13,25 +13,20 @@ Il plugin **My Warehouse Manager** è stato progettato specificamente per gestir
 - **Statistiche rapide** (totali, disponibili, assegnati, etc.)
 - **Azioni di gruppo** per modifiche massive (modalità kiosk, SIM)
 - **Modal dettagli** per visualizzazione completa di ogni tablet
+- **Form modal** per modifica e movimenti senza cambiare pagina
 - **Ricerca e filtri** per trovare rapidamente i dispositivi
 
 ### 📝 Gestione Tablet
-- **Form modifica tablet** tramite Frontend Admin
-- **Campo ubicazione unificata** per tracciare posizione attuale
+- **Form modal modifica tablet** tramite Frontend Admin
+- **Tassonomia destinazioni unificata** per tracciare ubicazione
 - **Gestione SIM** con logica condizionale avanzata
 - **Configurazione modalità kiosk** e accessori
 
-### 📦 Movimenti e Cronologia
-- **Registrazione movimenti** (assegnazioni, vendite, rientri, etc.)
-- **Cronologia completa** di tutti i movimenti
+### 📦 Gestione Movimenti
+- **Form modal registrazione movimenti** senza reload pagina
 - **Aggiornamento automatico** dello stato tablet
+- **Gestione destinazioni** tramite tassonomia unificata
 - **Upload documenti** per movimenti esterni
-
-### 🔒 Sicurezza
-- **Controllo permessi** amministratore
-- **Validazione CSRF** su tutte le operazioni
-- **Sanitizzazione dati** e prevenzione XSS
-- **Audit trail** per tracciamento attività
 
 ## 🛠️ Requisiti Tecnici
 
@@ -42,8 +37,7 @@ Il plugin **My Warehouse Manager** è stato progettato specificamente per gestir
 
 ### Plugin Richiesti
 - **Advanced Custom Fields PRO** - Gestione campi personalizzati
-- **Frontend Admin by DynamiApps (FREE)** - Form di editing frontend
-- **Forminator PRO** (opzionale) - Form aggiunta tablet
+- **Frontend Admin by DynamiApps (FREE)** - Form di editing modal
 
 ### Plugin Compatibili
 - **Divi Theme** - Layout e styling pagine
@@ -56,16 +50,15 @@ my-warehouse-manager/
 ├── my-warehouse-manager.php           # File principale plugin
 ├── includes/                          # Logica PHP
 │   ├── class-warehouse-manager.php    # Classe principale
-│   ├── dashboard-logic.php            # Shortcode dashboard e cronologia
-│   ├── ajax-handlers.php              # Gestione AJAX
+│   ├── dashboard-logic.php            # Shortcode dashboard
+│   ├── ajax-handlers.php              # Gestione AJAX e modal
 │   ├── frontend-forms.php             # Integrazione Frontend Admin
-│   ├── security.php                   # Controlli sicurezza
 │   └── helpers.php                    # Funzioni utility
 ├── assets/                            # File statici
 │   ├── css/
 │   │   └── warehouse-manager.css      # Stili plugin
 │   └── js/
-│       └── warehouse-manager.js       # JavaScript interazioni
+│       └── warehouse-manager.js       # JavaScript modal e interazioni
 ├── templates/                         # Template HTML
 │   └── modal-tablet-view.php          # Template modal dettagli
 └── README.md                          # Documentazione
@@ -84,20 +77,19 @@ wp-content/plugins/my-warehouse-manager/
 2. Vai su **Plugin > Plugin Installati**
 3. Attiva **My Warehouse Manager**
 
-### 3. Configurazione ACF
-Assicurati di avere configurato in ACF Pro:
+### 3. Configurazione ACF Pro
 
-#### Custom Post Types
+#### Custom Post Type
 - **tablet** (slug: `tablet`)
-- **movimento_magazzino** (slug: `movimento_magazzino`)
 
-#### Tassonomie
-- **destinazioni_interne** (slug: `destinazioni_interne`)
-- **progetti_esterni** (slug: `progetti_esterni`)
+#### Tassonomia Unificata
+- **destinazione** (slug: `destinazione`) - Associata al CPT tablet
+  - Contiene tutte le destinazioni interne e progetti esterni in una singola tassonomia
 
 #### Gruppi di Campi ACF
+
 **Dettagli Tablet:**
-- `stato_dispositivo` (Select)
+- `stato_dispositivo` (Select: disponibile, assegnato, in_manutenzione, venduto, rientrato)
 - `data_di_carico` (Date Picker)
 - `modalita_kiosk` (True/False)
 - `imei_tablet` (Text)
@@ -105,80 +97,108 @@ Assicurati di avere configurato in ACF Pro:
 - `sim_attiva` (True/False)
 - `sn_sim`, `pin_sim`, `puk_sim` (Text)
 - `cover`, `scatola` (True/False)
-- `tipologia` (Select)
+- `tipologia` (Select: tablet_android, tablet_ios, tablet_windows)
 - `note_generali_tablet` (Textarea)
-- `ubicazione_attuale_tablet` (Text) - **CRUCIALE**
+- `dove` (Taxonomy Select - Destinazione) - **CRUCIALE per ubicazione**
 
-**Dettagli Movimento:**
-- `tipo_di_movimento` (Select)
-- `data_movimento` (Date Picker)
-- `tablet_coinvolto` (Post Object)
-- `nome_referente_assegnatario` (Text)
-- `destinazione_interna` (Taxonomy Select)
-- `progetto_esterno` (Taxonomy Select)
-- `documento_di_consegna_ise` (File)
-- `note_movimento` (Textarea)
+### 4. Configurazione Frontend Admin
 
-### 4. Creazione Pagine
-Crea le seguenti pagine private in WordPress:
+Crea i seguenti form in Frontend Admin by DynamiApps:
+
+#### Form ID 204 - Aggiungi Nuovo Tablet
+- **Tipo**: New Post Form
+- **Post Type**: tablet
+- **Campi**: Tutti i custom field del tablet
+
+#### Form ID 110 - Modifica Tablet 
+- **Tipo**: Edit Post Form
+- **Post Type**: tablet  
+- **Campi**: Tutti i custom field modificabili
+
+#### Form ID 125 - Registra Movimento
+- **Tipo**: Edit Post Form
+- **Post Type**: tablet
+- **Funzione**: Aggiorna destinazione del tablet
+
+### 5. Creazione Pagine
+Crea una singola pagina principale in WordPress:
 
 ```
-/magazzino-tablet/          # Dashboard principale
-/modifica-tablet/           # Form modifica tablet
-/esegui-movimento/          # Form registrazione movimento
-/cronologia-movimenti/      # Cronologia completa
-/aggiungi-nuovo-tablet/     # Form aggiunta (Forminator)
+/magazzino-tablet/          # Dashboard con modal integrate
 ```
 
 ## 📖 Utilizzo
 
-### Dashboard Principale
+### Dashboard con Modal
 Inserisci lo shortcode nella pagina `/magazzino-tablet/`:
 ```
 [tablet_dashboard]
 ```
 
-### Cronologia Movimenti
-Inserisci lo shortcode nella pagina `/cronologia-movimenti/`:
-```
-[movimenti_history_table per_page="20"]
-```
-
-### Form Frontend Admin
-Configura i form nelle rispettive pagine seguendo le istruzioni nella documentazione tecnica.
+### Form Modal Integrate
+Le form sono integrate come modal nella dashboard:
+- **Aggiungi tablet**: `[frontend_admin form=204]`
+- **Modifica tablet**: `[frontend_admin form=110]` 
+- **Registra movimento**: `[frontend_admin form=125]`
 
 ## ⚙️ Configurazione Avanzata
 
+### Gestione Destinazioni Unificate
+La tassonomia `destinazione` contiene:
+- Destinazioni interne (uffici, reparti, etc.)
+- Progetti esterni (clienti, partner, etc.)
+- Posizioni temporanee (magazzino, manutenzione, etc.)
+
 ### Personalizzazione Stili
-Modifica il file `assets/css/warehouse-manager.css` per personalizzare l'aspetto:
+Modifica il file `assets/css/warehouse-manager.css`:
 
 ```css
-/* Cambia colori principali */
-.mwm-btn-primary {
-    background: #your-color;
+/* Modal personalizzate */
+.mwm-modal-content {
+    max-width: 900px; /* Più largo per form */
 }
 
-/* Modifica card statistiche */
-.mwm-stat-card {
-    background: #your-background;
+/* Form modal responsive */
+.frontend-admin-form {
+    padding: 20px;
 }
 ```
 
-### Hook Personalizzati
-Il plugin espone diversi hook per estensioni:
+### JavaScript Personalizzato
+Il file `warehouse-manager.js` gestisce:
+- Apertura modal per dettagli, modifica e movimento
+- Validazione form lato client
+- Aggiornamento dinamico della dashboard
+- Gestione azioni di gruppo
 
+## 🔧 Architettura Modal
+
+### Modal Manager
+Il plugin usa un sistema unificato di modal:
+1. **Modal dettagli** - Visualizzazione read-only
+2. **Modal modifica** - Form Frontend Admin per editing
+3. **Modal movimento** - Form Frontend Admin per movimenti
+
+### Flow di Lavoro
+1. **Dashboard** → Click bottone → **Modal aperta**
+2. **Form compilazione** → **Submit AJAX** → **Dashboard aggiornata**
+3. **Nessun reload pagina** → **Esperienza fluida**
+
+## 🏗️ Sviluppo
+
+### Hook Personalizzati
 ```php
 // Dopo salvataggio tablet
 add_action('mwm_after_tablet_save', 'my_custom_tablet_action', 10, 2);
 
-// Dopo salvataggio movimento
-add_action('mwm_after_movimento_save', 'my_custom_movimento_action', 10, 3);
+// Dopo apertura modal
+add_action('mwm_before_modal_open', 'my_modal_setup', 10, 2);
 ```
 
 ### Filtri Disponibili
 ```php
-// Personalizza opzioni ubicazione
-add_filter('mwm_ubicazione_options', 'my_custom_locations');
+// Personalizza contenuto modal
+add_filter('mwm_modal_content', 'my_modal_content', 10, 3);
 
 // Modifica validazione form
 add_filter('mwm_form_validation', 'my_custom_validation', 10, 2);
@@ -186,85 +206,48 @@ add_filter('mwm_form_validation', 'my_custom_validation', 10, 2);
 
 ## 🐛 Debugging
 
-### Attiva Debug Mode
+### Console Browser
+Verifica errori JavaScript:
+```javascript
+// Console log attivi in modalità sviluppo
+console.log('MWM: Modal opened for tablet ID:', tabletId);
+```
+
+### Log PHP
 ```php
-// wp-config.php
-define('WP_DEBUG', true);
-define('WP_DEBUG_LOG', true);
+// Log personalizzati
+error_log('MWM: Tablet aggiornato ID ' . $tablet_id);
 ```
 
-### Log Location
-I log del plugin si trovano in:
-```
-/wp-content/debug.log
-```
+## 🔄 Roadmap
 
-### Messaggi Debug Comuni
-- `MWM INFO: Tablet modificato: ID XXX`
-- `MWM INFO: Movimento registrato: ID XXX`
-- `MWM ERROR: ID tablet non valido`
+### Versione Corrente (1.0)
+- ✅ Dashboard unificata con modal
+- ✅ Tassonomia destinazioni unificata  
+- ✅ Form Frontend Admin integrate
+- ✅ Rimozione dipendenze obsolete
 
-## 🔧 Risoluzione Problemi
+### Prossime Versioni
+- **Export/Import** dati tablet
+- **Notifiche in-app** per cambiamenti
+- **Filtri avanzati** per grandi inventari
+- **API REST** per integrazioni esterne
 
-### Modal Non Si Apre
-1. Verifica che jQuery sia caricato
-2. Controlla console browser per errori JavaScript
-3. Assicurati che AJAX URL sia corretto
+## 📊 Performance
 
-### Azioni di Gruppo Non Funzionano
-1. Verifica permessi utente (deve essere administrator)
-2. Controlla nonce di sicurezza
-3. Verifica che i campi ACF esistano
-
-### Frontend Admin Form Errori
-1. Verifica configurazione campi in Frontend Admin
-2. Assicurati che tutti i custom post type esistano
-3. Controlla che le tassonomie siano configurate
-
-### Performance Lente
-1. Implementa caching se hai molti tablet (500+)
-2. Considera l'indicizzazione database per ricerche
-3. Ottimizza query ACF con `get_field()` bulk
-
-## 📊 Best Practices
-
-### Gestione Dati
-- **Backup regolari** prima di modifiche massive
-- **Validazione input** sempre attiva
-- **Sanitizzazione** di tutti i dati utente
-
-### Performance
-- **Paginazione** per tabelle con molti record
-- **Lazy loading** per modal con molti dettagli
-- **Caching** per query ripetitive
-
-### Sicurezza
-- **Nonce verification** su tutte le operazioni
-- **Capability checks** su ogni azione
-- **Input sanitization** costante
-
-## 🔄 Aggiornamenti Futuri
-
-### V1.1 (Pianificato)
-- **Export Excel/CSV** della dashboard
-- **Notifiche email** per movimenti importanti
-- **Widget dashboard** WordPress admin
-
-### V1.2 (Pianificato)
-- **API REST** per integrazione esterna
-- **App mobile companion** 
-- **Scadenze e alert** per manutenzioni
+### Ottimizzazioni
+- **Modal lazy loading** - Caricamento contenuto solo quando necessario
+- **AJAX calls minimizzate** - Una chiamata per operazione
+- **Cache browser** - Asset statici cached
+- **Database ottimizzato** - Query efficienti per grandi dataset
 
 ## 👥 Supporto
 
 ### Documentazione Tecnica
-Consulta i commenti nel codice per dettagli implementativi specifici.
-
-### Community
-Per domande e supporto, utilizza i canali della community WordPress.
-
-### Contributi
-I contributi sono benvenuti! Segui le best practices WordPress per pull request.
+Consulta i commenti nel codice per dettagli implementativi specifici, specialmente:
+- `dashboard-logic.php` - Logica shortcode e modal
+- `ajax-handlers.php` - Gestione chiamate AJAX
+- `warehouse-manager.js` - Interazioni client-side
 
 ---
 
@@ -274,12 +257,13 @@ Questo plugin è rilasciato sotto licenza GPL v2 o successiva, in linea con Word
 
 ## 🙏 Ringraziamenti
 
-- **WordPress Community** per l'ecosistema fantastico
-- **Advanced Custom Fields** per la potenza dei custom field
+- **WordPress Community** per l'ecosistema
+- **Advanced Custom Fields** per la gestione field
+- **Frontend Admin by DynamiApps** per le form modal
 - **AirDroid Business** per l'ispirazione UI/UX
 
 ---
 
 **Versione:** 1.0.0  
-**Autore:** Il Tuo Nome  
-**Ultima Modifica:** 2025-01-21
+**Architettura:** Unificata con Modal  
+**Ultima Modifica:** 2025-01-22
