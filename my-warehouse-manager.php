@@ -1,7 +1,7 @@
 <?php
 /**
  * Plugin Name: My Warehouse Manager
- * Description: Sistema di gestione magazzino tablet con dashboard, form di modifica e storico movimenti
+ * Description: Sistema di gestione magazzino tablet con dashboard, form modal e destinazioni unificate
  * Version: 1.0.0
  * Author: Il Tuo Nome
  * Text Domain: my-warehouse-manager
@@ -65,7 +65,6 @@ class MyWarehouseManager {
      */
     private function load_dependencies() {
         require_once MWM_PLUGIN_PATH . 'includes/class-warehouse-manager.php';
-        require_once MWM_PLUGIN_PATH . 'includes/security.php';
         require_once MWM_PLUGIN_PATH . 'includes/helpers.php';
         require_once MWM_PLUGIN_PATH . 'includes/dashboard-logic.php';
         require_once MWM_PLUGIN_PATH . 'includes/ajax-handlers.php';
@@ -81,7 +80,6 @@ class MyWarehouseManager {
         
         // Registra shortcode dashboard
         add_shortcode('tablet_dashboard', 'mwm_tablet_dashboard_shortcode');
-        add_shortcode('movimenti_history_table', 'mwm_movimenti_history_shortcode');
         
         // Hook per attivazione/disattivazione plugin
         register_activation_hook(__FILE__, array($this, 'on_activation'));
@@ -92,8 +90,8 @@ class MyWarehouseManager {
      * Carica CSS e JS nel frontend
      */
     public function enqueue_assets() {
-        // Solo sulle pagine che ne hanno bisogno
-        if (is_page() && (is_page('magazzino-tablet') || is_page('modifica-tablet') || is_page('esegui-movimento') || is_page('cronologia-movimenti'))) {
+        // Solo sulla pagina magazzino-tablet
+        if (is_page() && is_page('magazzino-tablet')) {
             
             wp_enqueue_style(
                 'warehouse-manager-css',
@@ -115,7 +113,8 @@ class MyWarehouseManager {
                 'ajax_url' => admin_url('admin-ajax.php'),
                 'nonce' => wp_create_nonce('warehouse_manager_nonce'),
                 'loading_text' => __('Caricamento...', 'my-warehouse-manager'),
-                'error_text' => __('Errore nel caricamento dati', 'my-warehouse-manager')
+                'error_text' => __('Errore nel caricamento dati', 'my-warehouse-manager'),
+                'success_text' => __('Operazione completata con successo', 'my-warehouse-manager')
             ));
         }
     }
@@ -125,6 +124,7 @@ class MyWarehouseManager {
      */
     public function enqueue_admin_assets() {
         // Per ora vuoto, ma pronto per futuri sviluppi
+        // Potremmo aggiungere stili per preview form ACF
     }
     
     /**
@@ -134,8 +134,13 @@ class MyWarehouseManager {
         // Flush rewrite rules se necessario
         flush_rewrite_rules();
         
+        // Crea pagina magazzino-tablet se non esiste
+        $this->create_required_pages();
+        
         // Log attivazione
-        error_log('My Warehouse Manager plugin attivato');
+        if (WP_DEBUG) {
+            error_log('My Warehouse Manager plugin attivato');
+        }
     }
     
     /**
@@ -146,7 +151,43 @@ class MyWarehouseManager {
         flush_rewrite_rules();
         
         // Log disattivazione  
-        error_log('My Warehouse Manager plugin disattivato');
+        if (WP_DEBUG) {
+            error_log('My Warehouse Manager plugin disattivato');
+        }
+    }
+    
+    /**
+     * Crea pagine richieste dal plugin
+     */
+    private function create_required_pages() {
+        $required_pages = array(
+            array(
+                'slug' => 'magazzino-tablet',
+                'title' => 'Dashboard Magazzino Tablet',
+                'content' => '[tablet_dashboard]',
+                'status' => 'private' // Pagina privata per sicurezza base
+            )
+        );
+        
+        foreach ($required_pages as $page_data) {
+            // Controlla se la pagina esiste già
+            $existing_page = get_page_by_path($page_data['slug']);
+            
+            if (!$existing_page) {
+                $page_id = wp_insert_post(array(
+                    'post_title' => $page_data['title'],
+                    'post_name' => $page_data['slug'],
+                    'post_content' => $page_data['content'],
+                    'post_status' => $page_data['status'],
+                    'post_type' => 'page',
+                    'post_author' => 1
+                ));
+                
+                if ($page_id && !is_wp_error($page_id)) {
+                    mwm_log("Pagina creata: {$page_data['title']} (ID: {$page_id})", 'info');
+                }
+            }
+        }
     }
 }
 
@@ -154,15 +195,6 @@ class MyWarehouseManager {
 MyWarehouseManager::get_instance();
 
 // Funzioni di utility globali per compatibilità
-if (!function_exists('mwm_is_admin_user')) {
-    /**
-     * Verifica se l'utente corrente è amministratore
-     */
-    function mwm_is_admin_user() {
-        return current_user_can('administrator');
-    }
-}
-
 if (!function_exists('mwm_get_plugin_url')) {
     /**
      * Restituisce URL del plugin
@@ -170,4 +202,48 @@ if (!function_exists('mwm_get_plugin_url')) {
     function mwm_get_plugin_url($path = '') {
         return MWM_PLUGIN_URL . $path;
     }
+}
+
+if (!function_exists('mwm_get_plugin_version')) {
+    /**
+     * Restituisce versione del plugin
+     */
+    function mwm_get_plugin_version() {
+        return MWM_PLUGIN_VERSION;
+    }
+}
+
+/**
+ * Hook per personalizzazioni Frontend Admin
+ */
+add_filter('frontend_admin_form_content', function($content, $form) {
+    // Aggiungi stili personalizzati per form nelle modal
+    if (strpos($content, 'class="frontend-admin-form"') !== false) {
+        $content = str_replace(
+            'class="frontend-admin-form"',
+            'class="frontend-admin-form mwm-frontend-form"',
+            $content
+        );
+    }
+    
+    return $content;
+}, 10, 2);
+
+/**
+ * Personalizza messaggi Frontend Admin per modal
+ */
+add_filter('frontend_admin_success_message', function($message, $form) {
+    // Per le modal, usiamo JavaScript per gestire il successo
+    return '<div class="mwm-form-success" style="display:none;">' . $message . '</div>';
+}, 10, 2);
+
+/**
+ * Hook per debugging in sviluppo
+ */
+if (WP_DEBUG) {
+    add_action('wp_footer', function() {
+        if (is_page('magazzino-tablet')) {
+            echo '<!-- My Warehouse Manager Debug: Plugin caricato correttamente -->';
+        }
+    });
 }
