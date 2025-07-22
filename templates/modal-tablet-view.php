@@ -2,8 +2,7 @@
 /**
  * Template per la modal di visualizzazione dettagli tablet
  * 
- * Questo template può essere utilizzato sia nell'AJAX handler
- * sia come template standalone per rendering server-side.
+ * Versione aggiornata con tassonomia "destinazione" unificata.
  * 
  * Variabili disponibili:
  * $tablet_data - Array con tutti i dati del tablet
@@ -30,7 +29,14 @@ $stato = $tablet_data['stato_dispositivo'] ?? '';
 $tipologia = $tablet_data['tipologia'] ?? '';
 $imei = $tablet_data['imei_tablet'] ?? '';
 $data_carico = $tablet_data['data_di_carico'] ?? '';
-$ubicazione = $tablet_data['ubicazione_attuale_tablet'] ?? '';
+
+// Gestione destinazione dalla tassonomia unificata
+$destinazione_obj = $tablet_data['dove'] ?? null;
+$destinazione_nome = '';
+if ($destinazione_obj && is_object($destinazione_obj)) {
+    $destinazione_nome = $destinazione_obj->name;
+}
+
 $modalita_kiosk = $tablet_data['modalita_kiosk'] ?? false;
 $sim_inserita = $tablet_data['sim_inserita'] ?? false;
 $sim_attiva = $tablet_data['sim_attiva'] ?? false;
@@ -87,21 +93,46 @@ $post_modified = $tablet_data['post_modified'] ?? '';
         </div>
     </div>
     
-    <!-- Ubicazione Attuale -->
+    <!-- Destinazione Attuale -->
     <div class="mwm-detail-section">
-        <h5>📍 Ubicazione</h5>
+        <h5>📍 Destinazione</h5>
         <div class="mwm-detail-item">
-            <label>Ubicazione Attuale:</label>
+            <label>Destinazione Attuale:</label>
             <span class="mwm-location-current">
                 <?php 
-                if ($ubicazione && $ubicazione !== '') {
-                    echo esc_html($ubicazione);
+                if ($destinazione_nome && $destinazione_nome !== '') {
+                    echo esc_html($destinazione_nome);
                 } else {
                     echo '<em style="color: #666;">Non assegnato</em>';
                 }
                 ?>
             </span>
         </div>
+        
+        <?php if ($destinazione_obj && is_object($destinazione_obj)): ?>
+            <div class="mwm-detail-item">
+                <label>Tipo Destinazione:</label>
+                <span>
+                    <?php 
+                    // Mostra se è una destinazione con parent (destinazione interna) o senza (progetto esterno)
+                    if ($destinazione_obj->parent) {
+                        $parent_term = get_term($destinazione_obj->parent);
+                        echo esc_html($parent_term->name . ' → ' . $destinazione_obj->name);
+                    } else {
+                        // Determina il tipo basandosi sulla convenzione dei nomi o metadati
+                        echo esc_html($destinazione_obj->name);
+                    }
+                    ?>
+                </span>
+            </div>
+            
+            <?php if ($destinazione_obj->description): ?>
+                <div class="mwm-detail-item">
+                    <label>Note Destinazione:</label>
+                    <span style="font-style: italic; color: #666;"><?php echo esc_html($destinazione_obj->description); ?></span>
+                </div>
+            <?php endif; ?>
+        <?php endif; ?>
     </div>
     
     <!-- Configurazione -->
@@ -210,7 +241,7 @@ $post_modified = $tablet_data['post_modified'] ?? '';
             if ($tipologia) $completeness_score++;
             if ($imei) $completeness_score++;
             if ($data_carico) $completeness_score++;
-            if ($ubicazione) $completeness_score += 2; // Più importante
+            if ($destinazione_nome) $completeness_score += 2; // Più importante
             if ($modalita_kiosk !== null) $completeness_score++;
             if ($sim_inserita !== null) $completeness_score++;
             if ($cover !== null) $completeness_score++;
@@ -240,8 +271,15 @@ $post_modified = $tablet_data['post_modified'] ?? '';
             
             <div class="mwm-detail-item">
                 <label>Pronto per Uso:</label>
-                <span class="mwm-status <?php echo ($stato === 'Disponibile' && $modalita_kiosk) ? 'status-active' : 'status-inactive'; ?>">
-                    <?php echo ($stato === 'Disponibile' && $modalita_kiosk) ? '✅ Sì' : '⚠️ No'; ?>
+                <span class="mwm-status <?php echo ($stato === 'disponibile' && $modalita_kiosk) ? 'status-active' : 'status-inactive'; ?>">
+                    <?php echo ($stato === 'disponibile' && $modalita_kiosk) ? '✅ Sì' : '⚠️ No'; ?>
+                </span>
+            </div>
+            
+            <div class="mwm-detail-item">
+                <label>Stato Assegnazione:</label>
+                <span class="mwm-status <?php echo $destinazione_nome ? 'status-active' : 'status-inactive'; ?>">
+                    <?php echo $destinazione_nome ? '📍 Assegnato' : '🏠 In Magazzino'; ?>
                 </span>
             </div>
         </div>
@@ -249,17 +287,15 @@ $post_modified = $tablet_data['post_modified'] ?? '';
     
     <!-- Azioni Rapide -->
     <div class="mwm-detail-actions">
-        <a href="/modifica-tablet/?post_id=<?php echo esc_attr($tablet_data['tablet_id'] ?? ''); ?>" 
-           class="mwm-btn mwm-btn-primary">
+        <button class="mwm-btn mwm-btn-primary" onclick="WarehouseManager.closeModal(); WarehouseManager.openEditModal({preventDefault: function(){}}, {dataset: {tabletId: '<?php echo esc_attr($tablet_data['tablet_id'] ?? ''); ?>'}})" title="Apre form modifica in modal">
             ✏️ Modifica Tablet
-        </a>
-        <a href="/esegui-movimento/?post_id=<?php echo esc_attr($tablet_data['tablet_id'] ?? ''); ?>" 
-           class="mwm-btn mwm-btn-secondary">
+        </button>
+        <button class="mwm-btn mwm-btn-secondary" onclick="WarehouseManager.closeModal(); WarehouseManager.openMovementModal({preventDefault: function(){}}, {dataset: {tabletId: '<?php echo esc_attr($tablet_data['tablet_id'] ?? ''); ?>'}})" title="Apre form movimento in modal">
             📦 Registra Movimento
-        </a>
+        </button>
         
-        <?php if ($ubicazione): ?>
-            <button class="mwm-btn mwm-btn-secondary" onclick="WarehouseManager.highlightRow(<?php echo esc_attr($tablet_data['tablet_id'] ?? '0'); ?>)">
+        <?php if ($destinazione_nome): ?>
+            <button class="mwm-btn mwm-btn-secondary" onclick="WarehouseManager.highlightRow(<?php echo esc_attr($tablet_data['tablet_id'] ?? '0'); ?>); WarehouseManager.closeModal();" title="Evidenzia riga in tabella">
                 📍 Evidenzia in Tabella
             </button>
         <?php endif; ?>
@@ -274,30 +310,63 @@ $post_modified = $tablet_data['post_modified'] ?? '';
                 <?php if (!$stato): ?><li>Imposta stato dispositivo</li><?php endif; ?>
                 <?php if (!$tipologia): ?><li>Specifica tipologia tablet</li><?php endif; ?>
                 <?php if (!$imei): ?><li>Inserisci IMEI</li><?php endif; ?>
-                <?php if (!$ubicazione): ?><li>Assegna ubicazione attuale</li><?php endif; ?>
+                <?php if (!$destinazione_nome): ?><li>Assegna destinazione attuale</li><?php endif; ?>
                 <?php if (!$data_carico): ?><li>Inserisci data di carico</li><?php endif; ?>
+                <?php if (!$modalita_kiosk): ?><li>Configura modalità kiosk</li><?php endif; ?>
             </ul>
+        </div>
+    <?php endif; ?>
+    
+    <!-- Informazioni Avanzate -->
+    <?php if (WP_DEBUG): ?>
+        <div class="mwm-detail-section" style="margin-top: 20px; padding: 10px; background: #f5f5f5; border-radius: 4px; font-size: 12px;">
+            <h5 style="margin-bottom: 10px;">🔧 Info Debug</h5>
+            <div style="font-family: monospace; color: #666;">
+                <strong>Tablet ID:</strong> <?php echo esc_html($tablet_data['tablet_id'] ?? 'N/A'); ?><br>
+                <strong>Destinazione Term ID:</strong> <?php echo $destinazione_obj ? esc_html($destinazione_obj->term_id) : 'N/A'; ?><br>
+                <strong>Completezza:</strong> <?php echo $completeness_score; ?>/<?php echo $max_score; ?> (<?php echo $completeness_percentage; ?>%)<br>
+                <strong>Ultima Modifica DB:</strong> <?php echo $post_modified ? esc_html(date('d/m/Y H:i:s', strtotime($post_modified))) : 'N/A'; ?>
+            </div>
         </div>
     <?php endif; ?>
 </div>
 
 <script>
-// JavaScript specifico per la modal
+// JavaScript specifico per la modal dettagli
 jQuery(document).ready(function($) {
     // Seleziona automaticamente testo sensibile al click
     $('.mwm-sensitive').on('click', function() {
         this.select();
-        document.execCommand('copy');
+        
+        // Copia negli appunti se supportato
+        if (navigator.clipboard) {
+            navigator.clipboard.writeText($(this).text()).then(function() {
+                console.log('Copiato negli appunti');
+            });
+        } else {
+            // Fallback per browser più vecchi
+            document.execCommand('copy');
+        }
         
         // Feedback visivo
         const originalBg = $(this).css('background-color');
         $(this).css('background-color', '#d4edda');
         setTimeout(() => {
             $(this).css('background-color', originalBg);
-        }, 300);
+        }, 500);
     });
     
-    // Tooltip per dati sensibili
-    $('.mwm-sensitive').attr('title', 'Clicca per selezionare e copiare');
+    // Tooltip migliorati per dati sensibili
+    $('.mwm-sensitive').attr('title', 'Clicca per selezionare e copiare negli appunti');
+    
+    // Hover effect per azioni rapide
+    $('.mwm-detail-actions .mwm-btn').hover(
+        function() {
+            $(this).css('transform', 'translateY(-1px)');
+        },
+        function() {
+            $(this).css('transform', 'translateY(0)');
+        }
+    );
 });
 </script>
