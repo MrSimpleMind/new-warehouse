@@ -4,31 +4,12 @@
  * 
  * Contiene funzioni utility riutilizzabili in tutto il plugin
  * per formattazione, validazione e operazioni comuni.
+ * Versione senza controlli di sicurezza per sviluppo.
  */
 
 // Previeni accesso diretto
 if (!defined('ABSPATH')) {
     exit;
-}
-
-/**
- * Verifica se l'utente corrente può accedere alle funzionalità del warehouse
- */
-function mwm_user_can_access_warehouse() {
-    return current_user_can('administrator');
-}
-
-/**
- * Genera messaggio di errore per accesso negato
- */
-function mwm_access_denied_message($custom_message = '') {
-    $default_message = 'Accesso negato. È richiesto il login come amministratore per accedere a questa funzionalità.';
-    $message = $custom_message ?: $default_message;
-    
-    return sprintf(
-        '<div class="mwm-error" style="color: red; font-weight: bold; padding: 15px; background: #ffe6e6; border: 1px solid #ff9999; border-radius: 4px; margin: 15px 0;">%s</div>',
-        esc_html($message)
-    );
 }
 
 /**
@@ -45,44 +26,15 @@ function mwm_is_valid_tablet_id($tablet_id) {
 }
 
 /**
- * Valida se un movimento ID è valido
- */
-function mwm_is_valid_movimento_id($movimento_id) {
-    if (!$movimento_id || !is_numeric($movimento_id)) {
-        return false;
-    }
-    
-    $movimento = get_post($movimento_id);
-    
-    return $movimento && $movimento->post_type === 'movimento_magazzino' && $movimento->post_status === 'publish';
-}
-
-/**
  * Ottiene le opzioni disponibili per il campo stato_dispositivo
  */
 function mwm_get_stato_dispositivo_options() {
-    // Queste dovrebbero corrispondere alle opzioni configurate in ACF
     return array(
         'disponibile' => 'Disponibile',
         'assegnato' => 'Assegnato',
         'in_manutenzione' => 'In Manutenzione',
         'venduto' => 'Venduto',
         'rientrato' => 'Rientrato'
-    );
-}
-
-/**
- * Ottiene le opzioni disponibili per il campo tipo_di_movimento
- */
-function mwm_get_tipo_movimento_options() {
-    // Queste dovrebbero corrispondere alle opzioni configurate in ACF
-    return array(
-        'assegnazione' => 'Assegnazione',
-        'vendita' => 'Vendita', 
-        'rientro' => 'Rientro',
-        'manutenzione' => 'Manutenzione',
-        'spedizione' => 'Spedizione',
-        'assegnazione_affitto' => 'Assegnazione Affitto'
     );
 }
 
@@ -119,37 +71,6 @@ function mwm_format_date($date_string, $format = 'd/m/Y') {
  */
 function mwm_format_datetime($date_string, $format = 'd/m/Y H:i') {
     return mwm_format_date($date_string, $format);
-}
-
-/**
- * Genera un ID univoco per un nuovo movimento
- */
-function mwm_generate_movimento_id($tablet_id) {
-    $tablet = get_post($tablet_id);
-    $tablet_title = $tablet ? $tablet->post_title : 'Unknown';
-    $date = current_time('Y-m-d');
-    
-    // Conta i movimenti esistenti per questo tablet oggi
-    $existing_movements = get_posts(array(
-        'post_type' => 'movimento_magazzino',
-        'meta_query' => array(
-            array(
-                'key' => 'tablet_coinvolto',
-                'value' => $tablet_id,
-                'compare' => '='
-            ),
-            array(
-                'key' => 'data_movimento',
-                'value' => $date,
-                'compare' => '='
-            )
-        ),
-        'posts_per_page' => -1
-    ));
-    
-    $sequence = count($existing_movements) + 1;
-    
-    return sprintf('Movimento %s - %s-%02d', $tablet_title, $date, $sequence);
 }
 
 /**
@@ -215,32 +136,32 @@ function mwm_log($message, $level = 'info') {
 }
 
 /**
- * Ottiene tutti i termini di una tassonomia come array di opzioni
+ * Ottiene tutti i termini della tassonomia destinazioni come array di opzioni
  */
-function mwm_get_taxonomy_options($taxonomy, $include_empty = true) {
+function mwm_get_destinazione_options($include_empty = true) {
     $options = array();
     
     if ($include_empty) {
-        $options[''] = '--- Seleziona ---';
+        $options[''] = '--- Non Assegnato ---';
     }
     
     $terms = get_terms(array(
-        'taxonomy' => $taxonomy,
+        'taxonomy' => 'destinazione',
         'hide_empty' => false,
         'orderby' => 'name',
         'order' => 'ASC'
     ));
     
     if (is_wp_error($terms)) {
-        mwm_log('Errore nel recupero termini per tassonomia: ' . $taxonomy, 'error');
+        mwm_log('Errore nel recupero termini per tassonomia destinazione', 'error');
         return $options;
     }
     
     foreach ($terms as $term) {
         $prefix = '';
         
-        // Aggiungi prefisso per termini gerarchici
-        if ($term->parent && $taxonomy === 'destinazioni_interne') {
+        // Aggiungi prefisso per termini gerarchici (se esistono)
+        if ($term->parent) {
             $prefix = '— ';
         }
         
@@ -286,13 +207,7 @@ function mwm_is_warehouse_page($page_slugs = null) {
     }
     
     $warehouse_pages = array(
-        'magazzino-tablet',
-        'modifica-tablet', 
-        'esegui-movimento',
-        'cronologia-movimenti',
-        'aggiungi-nuovo-tablet',
-        'visualizza-tablet',
-        'spostamento-di-gruppo'
+        'magazzino-tablet'
     );
     
     if ($page_slugs) {
@@ -328,21 +243,170 @@ function mwm_generate_breadcrumb() {
     global $post;
     
     $breadcrumb_map = array(
-        'magazzino-tablet' => 'Dashboard Magazzino',
-        'modifica-tablet' => 'Modifica Tablet',
-        'esegui-movimento' => 'Registra Movimento', 
-        'cronologia-movimenti' => 'Cronologia Movimenti',
-        'aggiungi-nuovo-tablet' => 'Aggiungi Tablet',
-        'spostamento-di-gruppo' => 'Spostamento di Gruppo'
+        'magazzino-tablet' => 'Dashboard Magazzino'
     );
     
     $current_page = isset($breadcrumb_map[$post->post_name]) ? $breadcrumb_map[$post->post_name] : $post->post_title;
     
     $breadcrumb = '<nav class="mwm-breadcrumb">';
-    $breadcrumb .= '<a href="' . mwm_get_warehouse_page_url('magazzino-tablet') . '">Dashboard</a>';
-    $breadcrumb .= ' <span class="mwm-breadcrumb-separator">></span> ';
     $breadcrumb .= '<span class="mwm-breadcrumb-current">' . esc_html($current_page) . '</span>';
     $breadcrumb .= '</nav>';
     
     return $breadcrumb;
+}
+
+/**
+ * Ottiene statistiche rapide sui tablet
+ */
+function mwm_get_tablet_statistics() {
+    $tablets = get_posts(array(
+        'post_type' => 'tablet',
+        'post_status' => 'publish',
+        'posts_per_page' => -1
+    ));
+    
+    $stats = array(
+        'total' => count($tablets),
+        'disponibili' => 0,
+        'assegnati' => 0,
+        'in_manutenzione' => 0,
+        'con_kiosk' => 0,
+        'con_sim_attiva' => 0
+    );
+    
+    foreach ($tablets as $tablet) {
+        $stato = get_field('stato_dispositivo', $tablet->ID);
+        $kiosk = get_field('modalita_kiosk', $tablet->ID);
+        $sim_attiva = get_field('sim_attiva', $tablet->ID);
+        
+        // Conta stati
+        if ($stato === 'disponibile') $stats['disponibili']++;
+        if ($stato === 'assegnato') $stats['assegnati']++;
+        if ($stato === 'in_manutenzione') $stats['in_manutenzione']++;
+        
+        // Conta configurazioni
+        if ($kiosk) $stats['con_kiosk']++;
+        if ($sim_attiva) $stats['con_sim_attiva']++;
+    }
+    
+    return $stats;
+}
+
+/**
+ * Ottiene lista destinazioni più utilizzate
+ */
+function mwm_get_popular_destinations($limit = 5) {
+    $tablets = get_posts(array(
+        'post_type' => 'tablet',
+        'post_status' => 'publish',
+        'posts_per_page' => -1
+    ));
+    
+    $destinations = array();
+    
+    foreach ($tablets as $tablet) {
+        $destinazione = get_field('dove', $tablet->ID);
+        
+        if ($destinazione && is_object($destinazione)) {
+            $dest_name = $destinazione->name;
+            
+            if (!isset($destinations[$dest_name])) {
+                $destinations[$dest_name] = 0;
+            }
+            
+            $destinations[$dest_name]++;
+        }
+    }
+    
+    // Ordina per popolarità
+    arsort($destinations);
+    
+    // Limita risultati
+    if ($limit > 0) {
+        $destinations = array_slice($destinations, 0, $limit, true);
+    }
+    
+    return $destinations;
+}
+
+/**
+ * Formatta informazioni tablet per export
+ */
+function mwm_format_tablet_for_export($tablet_id) {
+    $tablet = get_post($tablet_id);
+    
+    if (!$tablet) {
+        return null;
+    }
+    
+    $destinazione = get_field('dove', $tablet_id);
+    $destinazione_nome = $destinazione ? $destinazione->name : 'Non assegnato';
+    
+    return array(
+        'ID' => $tablet->post_title,
+        'IMEI' => get_field('imei_tablet', $tablet_id) ?: '',
+        'Stato' => get_field('stato_dispositivo', $tablet_id) ?: '',
+        'Tipologia' => get_field('tipologia', $tablet_id) ?: '',
+        'Destinazione' => $destinazione_nome,
+        'Modalità Kiosk' => get_field('modalita_kiosk', $tablet_id) ? 'Sì' : 'No',
+        'SIM Inserita' => get_field('sim_inserita', $tablet_id) ? 'Sì' : 'No',
+        'SIM Attiva' => get_field('sim_attiva', $tablet_id) ? 'Sì' : 'No',
+        'Cover' => get_field('cover', $tablet_id) ? 'Sì' : 'No',
+        'Scatola' => get_field('scatola', $tablet_id) ? 'Sì' : 'No',
+        'Data Carico' => mwm_format_date(get_field('data_di_carico', $tablet_id)),
+        'Note' => get_field('note_generali_tablet', $tablet_id) ?: ''
+    );
+}
+
+/**
+ * Cerca tablet per termine di ricerca
+ */
+function mwm_search_tablets($search_term, $limit = 10) {
+    $args = array(
+        'post_type' => 'tablet',
+        'post_status' => 'publish',
+        'posts_per_page' => $limit,
+        's' => $search_term
+    );
+    
+    // Cerca anche nei campi ACF
+    $meta_query = array(
+        'relation' => 'OR',
+        array(
+            'key' => 'imei_tablet',
+            'value' => $search_term,
+            'compare' => 'LIKE'
+        )
+    );
+    
+    $args['meta_query'] = $meta_query;
+    
+    return get_posts($args);
+}
+
+/**
+ * Valida configurazione tablet
+ */
+function mwm_validate_tablet_config($tablet_id) {
+    $errors = array();
+    
+    $imei = get_field('imei_tablet', $tablet_id);
+    $stato = get_field('stato_dispositivo', $tablet_id);
+    $sim_inserita = get_field('sim_inserita', $tablet_id);
+    $sim_attiva = get_field('sim_attiva', $tablet_id);
+    
+    // Validazioni
+    if (!$imei || strlen($imei) !== 15) {
+        $errors[] = 'IMEI deve essere di 15 cifre';
+    }
+    
+    if (!$stato) {
+        $errors[] = 'Stato dispositivo è obbligatorio';
+    }
+    
+    if ($sim_attiva && !$sim_inserita) {
+        $errors[] = 'SIM non può essere attiva se non inserita';
+    }
+    
+    return $errors;
 }
