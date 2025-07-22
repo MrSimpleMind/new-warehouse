@@ -1,8 +1,9 @@
 /**
- * My Warehouse Manager - JavaScript
+ * My Warehouse Manager - JavaScript con Modal Forms
  * 
- * Gestisce le interazioni frontend del plugin, inclusa la modal
- * di visualizzazione dettagli tablet e le azioni di gruppo.
+ * Gestisce le interazioni frontend del plugin, incluse le modal
+ * per visualizzazione dettagli, modifica tablet, movimento e aggiunta
+ * tramite form Frontend Admin integrate.
  */
 
 (function($) {
@@ -19,15 +20,22 @@
         init: function() {
             this.bindEvents();
             this.initBulkActions();
-            this.initModal();
+            this.initModals();
         },
 
         /**
          * Collega tutti gli eventi
          */
         bindEvents: function() {
-            // Gestione modal visualizzazione tablet
+            // Gestione modal visualizzazione tablet (mantenuta)
             $(document).on('click', '.mwm-btn-view', this.openTabletModal);
+            
+            // NUOVI: Gestione modal forms
+            $(document).on('click', '.mwm-btn-edit', this.openEditModal);
+            $(document).on('click', '.mwm-btn-movement', this.openMovementModal);
+            $(document).on('click', '#mwm-add-tablet-btn', this.openAddTabletModal);
+            
+            // Gestione chiusura modal
             $(document).on('click', '.mwm-modal-close', this.closeModal);
             $(document).on('click', '.mwm-modal', this.closeModalOnBackdrop);
 
@@ -38,20 +46,13 @@
             // Gestione azioni di gruppo
             $(document).on('change', '.mwm-tablet-checkbox', this.updateBulkActionState);
             $(document).on('change', '#mwm-bulk-action', this.updateBulkActionState);
-
-            // Gestione form azioni di gruppo
             $(document).on('submit', '#mwm-bulk-form', this.handleBulkAction);
 
             // Gestione escape key per chiudere modal
             $(document).on('keydown', this.handleKeyDown);
 
-            // Gestione filtri cronologia (se presente)
-            $(document).on('change', '.mwm-history-filter', this.filterHistory);
-
             // Debug logging
-            if (window.console && console.log) {
-                console.log('Warehouse Manager JavaScript inizializzato');
-            }
+            console.log('Warehouse Manager JavaScript inizializzato con Modal Forms');
         },
 
         /**
@@ -62,15 +63,15 @@
         },
 
         /**
-         * Inizializza modal
+         * Inizializza tutte le modal
          */
-        initModal: function() {
-            // Assicura che la modal sia nascosta all'inizio
-            $('#mwm-tablet-modal').hide();
+        initModals: function() {
+            // Assicura che tutte le modal siano nascoste all'inizio
+            $('.mwm-modal').hide();
         },
 
         /**
-         * Apre modal con dettagli tablet
+         * Apre modal con dettagli tablet (mantenuta)
          */
         openTabletModal: function(e) {
             e.preventDefault();
@@ -100,7 +101,6 @@
                 success: function(response) {
                     if (response.success) {
                         modalBody.html(response.data.html);
-                        // Aggiorna titolo modal se necessario
                         modal.find('.mwm-modal-header h3').text('Dettagli Tablet: ' + response.data.tablet_title);
                     } else {
                         WarehouseManager.showModalError('Errore nel caricamento: ' + (response.data || 'Errore sconosciuto'));
@@ -114,11 +114,183 @@
         },
 
         /**
-         * Chiude la modal
+         * NUOVO: Apre modal modifica tablet
+         */
+        openEditModal: function(e) {
+            e.preventDefault();
+            
+            const tabletId = $(this).data('tablet-id');
+            const modal = $('#mwm-edit-tablet-modal');
+            const modalBody = modal.find('.mwm-modal-body');
+
+            if (!tabletId) {
+                WarehouseManager.showError('ID tablet non trovato');
+                return;
+            }
+
+            // Mostra modal con loading
+            modalBody.html('<div class="mwm-loading">Caricamento form modifica...</div>');
+            modal.fadeIn(300);
+
+            // Chiamata AJAX per caricare form Frontend Admin
+            $.ajax({
+                url: warehouse_ajax.ajax_url,
+                type: 'POST',
+                data: {
+                    action: 'mwm_get_edit_form',
+                    tablet_id: tabletId,
+                    nonce: warehouse_ajax.nonce
+                },
+                success: function(response) {
+                    if (response.success) {
+                        modalBody.html(response.data.html);
+                        modal.find('.mwm-modal-header h3').text('Modifica Tablet: ' + response.data.tablet_title);
+                        
+                        // Inizializza form Frontend Admin
+                        WarehouseManager.initModalForm(modal);
+                    } else {
+                        WarehouseManager.showModalError('Errore nel caricamento form: ' + (response.data || 'Errore sconosciuto'));
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error('Errore AJAX modifica:', error);
+                    WarehouseManager.showModalError('Errore di connessione. Riprova più tardi.');
+                }
+            });
+        },
+
+        /**
+         * NUOVO: Apre modal movimento tablet
+         */
+        openMovementModal: function(e) {
+            e.preventDefault();
+            
+            const tabletId = $(this).data('tablet-id');
+            const modal = $('#mwm-movement-modal');
+            const modalBody = modal.find('.mwm-modal-body');
+
+            if (!tabletId) {
+                WarehouseManager.showError('ID tablet non trovato');
+                return;
+            }
+
+            // Mostra modal con loading
+            modalBody.html('<div class="mwm-loading">Caricamento form movimento...</div>');
+            modal.fadeIn(300);
+
+            // Chiamata AJAX per caricare form movimento
+            $.ajax({
+                url: warehouse_ajax.ajax_url,
+                type: 'POST',
+                data: {
+                    action: 'mwm_get_movement_form',
+                    tablet_id: tabletId,
+                    nonce: warehouse_ajax.nonce
+                },
+                success: function(response) {
+                    if (response.success) {
+                        modalBody.html(response.data.html);
+                        modal.find('.mwm-modal-header h3').text('Movimento Tablet: ' + response.data.tablet_title);
+                        
+                        // Inizializza form Frontend Admin
+                        WarehouseManager.initModalForm(modal);
+                    } else {
+                        WarehouseManager.showModalError('Errore nel caricamento form movimento: ' + (response.data || 'Errore sconosciuto'));
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error('Errore AJAX movimento:', error);
+                    WarehouseManager.showModalError('Errore di connessione. Riprova più tardi.');
+                }
+            });
+        },
+
+        /**
+         * NUOVO: Apre modal aggiungi tablet
+         */
+        openAddTabletModal: function(e) {
+            if (e) e.preventDefault();
+            
+            const modal = $('#mwm-add-tablet-modal');
+            const modalBody = modal.find('.mwm-modal-body');
+
+            // Mostra modal con loading
+            modalBody.html('<div class="mwm-loading">Caricamento form aggiunta tablet...</div>');
+            modal.fadeIn(300);
+
+            // Chiamata AJAX per caricare form aggiunta
+            $.ajax({
+                url: warehouse_ajax.ajax_url,
+                type: 'POST',
+                data: {
+                    action: 'mwm_get_add_form',
+                    nonce: warehouse_ajax.nonce
+                },
+                success: function(response) {
+                    if (response.success) {
+                        modalBody.html(response.data.html);
+                        
+                        // Inizializza form Frontend Admin
+                        WarehouseManager.initModalForm(modal);
+                    } else {
+                        WarehouseManager.showModalError('Errore nel caricamento form: ' + (response.data || 'Errore sconosciuto'));
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error('Errore AJAX aggiunta:', error);
+                    WarehouseManager.showModalError('Errore di connessione. Riprova più tardi.');
+                }
+            });
+        },
+
+        /**
+         * NUOVO: Inizializza form Frontend Admin nella modal
+         */
+        initModalForm: function(modal) {
+            const form = modal.find('form');
+            
+            if (form.length) {
+                // Aggiungi gestore per submit form
+                form.on('submit', function(e) {
+                    const submitBtn = $(this).find('button[type="submit"], input[type="submit"]');
+                    submitBtn.prop('disabled', true);
+                    
+                    // Cambia testo del pulsante per feedback
+                    const originalText = submitBtn.text();
+                    submitBtn.text('Salvando...');
+                    
+                    // Dopo 3 secondi, se il form non ha avuto successo, riabilita
+                    setTimeout(function() {
+                        if (submitBtn.prop('disabled')) {
+                            submitBtn.prop('disabled', false).text(originalText);
+                        }
+                    }, 5000);
+                });
+
+                console.log('Form Frontend Admin inizializzato nella modal');
+            }
+        },
+
+        /**
+         * NUOVO: Chiude tutte le modal
+         */
+        closeAllModals: function() {
+            $('.mwm-modal').fadeOut(300);
+        },
+
+        /**
+         * Chiude la modal specificata o tutte
          */
         closeModal: function(e) {
             if (e) e.preventDefault();
-            $('#mwm-tablet-modal').fadeOut(300);
+            
+            const modal = $(e.target).closest('.mwm-modal');
+            if (modal.length) {
+                modal.fadeOut(300);
+            } else {
+                // Chiudi tutte le modal
+                WarehouseManager.closeAllModals();
+            }
         },
 
         /**
@@ -126,7 +298,7 @@
          */
         closeModalOnBackdrop: function(e) {
             if (e.target === this) {
-                WarehouseManager.closeModal();
+                $(this).fadeOut(300);
             }
         },
 
@@ -135,8 +307,36 @@
          */
         handleKeyDown: function(e) {
             if (e.keyCode === 27) { // Escape key
-                WarehouseManager.closeModal();
+                WarehouseManager.closeAllModals();
             }
+        },
+
+        /**
+         * NUOVO: Refresh dashboard dopo operazioni
+         */
+        refreshDashboard: function() {
+            $.ajax({
+                url: warehouse_ajax.ajax_url,
+                type: 'POST',
+                data: {
+                    action: 'mwm_refresh_dashboard',
+                    nonce: warehouse_ajax.nonce
+                },
+                success: function(response) {
+                    if (response.success) {
+                        // Aggiorna statistiche
+                        $('.mwm-stats-grid').html(response.data.stats_html);
+                        
+                        // Aggiorna tabella
+                        $('#mwm-tablets-table tbody').html(response.data.table_html);
+                        
+                        console.log('Dashboard aggiornata con successo');
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error('Errore refresh dashboard:', error);
+                }
+            });
         },
 
         /**
@@ -147,12 +347,12 @@
                 <div class="mwm-error" style="margin: 20px 0; text-align: center;">
                     <strong>Errore:</strong> ${message}
                     <br><br>
-                    <button class="mwm-btn mwm-btn-secondary" onclick="WarehouseManager.closeModal()">
+                    <button class="mwm-btn mwm-btn-secondary" onclick="WarehouseManager.closeAllModals()">
                         Chiudi
                     </button>
                 </div>
             `;
-            $('#mwm-tablet-modal .mwm-modal-body').html(errorHtml);
+            $('.mwm-modal:visible .mwm-modal-body').html(errorHtml);
         },
 
         /**
@@ -165,13 +365,9 @@
                 </div>
             `;
             
-            // Rimuovi messaggi esistenti
             $('.mwm-message').remove();
-            
-            // Aggiungi nuovo messaggio in cima alla dashboard
             $('.mwm-dashboard-wrapper').prepend(errorHtml);
             
-            // Auto-rimuovi dopo 5 secondi
             setTimeout(function() {
                 $('.mwm-message.error').fadeOut(300, function() {
                     $(this).remove();
@@ -209,7 +405,7 @@
         },
 
         /**
-         * Aggiorna stato "Seleziona tutto" basato sui checkbox individuali
+         * Aggiorna stato "Seleziona tutto"
          */
         updateSelectAllState: function() {
             const totalCheckboxes = $('.mwm-tablet-checkbox').length;
@@ -294,34 +490,42 @@
             const originalText = submitButton.text();
             submitButton.prop('disabled', true).text('Elaborazione...');
 
-            // Invia form normale (non AJAX per semplicità)
-            // Il form verrà processato dal PHP con redirect
-            form.off('submit').submit();
+            // Raccogli ID tablet
+            const tabletIds = [];
+            checkedTablets.each(function() {
+                tabletIds.push($(this).val());
+            });
 
-            // Nota: dopo il submit, la pagina si ricaricherà quindi non serve ripristinare lo stato del bottone
-        },
-
-        /**
-         * Filtra cronologia movimenti (se presente)
-         */
-        filterHistory: function() {
-            // Implementazione semplice per filtri
-            const filterValue = $(this).val().toLowerCase();
-            const filterType = $(this).data('filter-type');
-            
-            $('.mwm-history-table tbody tr').each(function() {
-                const row = $(this);
-                let shouldShow = true;
-                
-                if (filterType === 'tablet' && filterValue) {
-                    const tabletCell = row.find('td').eq(2).text().toLowerCase(); // Colonna tablet
-                    shouldShow = tabletCell.includes(filterValue);
-                } else if (filterType === 'tipo' && filterValue) {
-                    const tipoCell = row.find('td').eq(1).text().toLowerCase(); // Colonna tipo
-                    shouldShow = tipoCell.includes(filterValue);
+            // Invia via AJAX
+            $.ajax({
+                url: warehouse_ajax.ajax_url,
+                type: 'POST',
+                data: {
+                    action: 'mwm_bulk_action',
+                    bulk_action: action,
+                    tablet_ids: tabletIds,
+                    nonce: warehouse_ajax.nonce
+                },
+                success: function(response) {
+                    if (response.success) {
+                        WarehouseManager.showSuccess(response.data.message);
+                        WarehouseManager.refreshDashboard();
+                        
+                        // Reset form
+                        $('#mwm-bulk-action').val('');
+                        $('.mwm-tablet-checkbox, #mwm-select-all').prop('checked', false);
+                        WarehouseManager.updateBulkActionState();
+                    } else {
+                        WarehouseManager.showError('Errore: ' + response.data);
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error('Errore bulk action:', error);
+                    WarehouseManager.showError('Errore di connessione. Riprova più tardi.');
+                },
+                complete: function() {
+                    submitButton.prop('disabled', false).text(originalText);
                 }
-                
-                row.toggle(shouldShow);
             });
         },
 
@@ -336,24 +540,6 @@
                     row.removeClass('mwm-highlight');
                 }, duration);
             }
-        },
-
-        /**
-         * Aggiorna riga della tabella dopo modifica
-         */
-        refreshTableRow: function(tabletId) {
-            // Questa funzione potrebbe essere utile per aggiornare
-            // una singola riga senza ricaricare l'intera pagina
-            // Per ora è un placeholder per futuri sviluppi
-        },
-
-        /**
-         * Gestisce click sui link sensibili (PIN, PUK, etc)
-         */
-        handleSensitiveData: function() {
-            $(document).on('click', '.mwm-sensitive', function() {
-                $(this).select();
-            });
         }
     };
 
@@ -362,23 +548,84 @@
      */
     $(document).ready(function() {
         WarehouseManager.init();
-        WarehouseManager.handleSensitiveData();
+        
+        // Esponi oggetto globalmente per uso esterno
+        window.WarehouseManager = WarehouseManager;
+        
+        // Listener per successo form Frontend Admin
+        $(document).on('frontend_admin_form_success', function(e, form, response) {
+            console.log('Frontend Admin form submitted successfully');
+            
+            // Refresh dashboard dopo 1 secondo
+            setTimeout(function() {
+                WarehouseManager.refreshDashboard();
+                WarehouseManager.closeAllModals();
+                WarehouseManager.showSuccess('Operazione completata con successo!');
+            }, 1000);
+        });
+        
+        // Listener per errori form Frontend Admin
+        $(document).on('frontend_admin_form_error', function(e, form, response) {
+            console.error('Frontend Admin form error:', response);
+            WarehouseManager.showError('Errore nel salvataggio del form. Riprova.');
+        });
     });
-
-    /**
-     * Espone oggetto globalmente per uso esterno
-     */
-    window.WarehouseManager = WarehouseManager;
 
 })(jQuery);
 
 /**
- * CSS aggiuntivo per animazioni e stati speciali
- * (Questo verrà gestito meglio nel file CSS, ma per ora lo includiamo qui)
+ * CSS aggiuntivo per modal forms
  */
 if (typeof window !== 'undefined') {
     const style = document.createElement('style');
     style.textContent = `
+        /* Modal form styling */
+        .mwm-modal-form {
+            max-width: 900px !important;
+        }
+        
+        .mwm-modal-form .mwm-modal-body {
+            max-height: 70vh;
+            overflow-y: auto;
+            padding: 20px;
+        }
+        
+        /* Frontend Admin form styling in modal */
+        .mwm-modal .frontend-admin-form {
+            background: none;
+            box-shadow: none;
+            border: none;
+        }
+        
+        .mwm-modal .frontend-admin-form input,
+        .mwm-modal .frontend-admin-form select,
+        .mwm-modal .frontend-admin-form textarea {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin-bottom: 15px;
+        }
+        
+        .mwm-modal .frontend-admin-form button[type="submit"] {
+            background: #007cba;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 500;
+        }
+        
+        .mwm-modal .frontend-admin-form button[type="submit"]:hover {
+            background: #005a87;
+        }
+        
+        .mwm-modal .frontend-admin-form button[type="submit"]:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        
         .mwm-highlight {
             background-color: #fff3cd !important;
             transition: background-color 0.3s ease;
@@ -386,16 +633,19 @@ if (typeof window !== 'undefined') {
         
         .mwm-loading {
             position: relative;
+            padding: 40px;
+            text-align: center;
+            color: #666;
         }
         
         .mwm-loading::after {
             content: '';
             position: absolute;
-            right: -20px;
-            top: 50%;
-            transform: translateY(-50%);
-            width: 16px;
-            height: 16px;
+            right: 50%;
+            top: 60%;
+            transform: translateX(50%);
+            width: 20px;
+            height: 20px;
             border: 2px solid #ccc;
             border-top: 2px solid #007cba;
             border-radius: 50%;
@@ -403,8 +653,8 @@ if (typeof window !== 'undefined') {
         }
         
         @keyframes mwm-spin {
-            0% { transform: translateY(-50%) rotate(0deg); }
-            100% { transform: translateY(-50%) rotate(360deg); }
+            0% { transform: translateX(50%) rotate(0deg); }
+            100% { transform: translateX(50%) rotate(360deg); }
         }
         
         .mwm-modal {
@@ -420,6 +670,19 @@ if (typeof window !== 'undefined') {
         #mwm-select-all:focus {
             outline: 2px solid #007cba;
             outline-offset: 2px;
+        }
+        
+        /* Responsive modal forms */
+        @media (max-width: 768px) {
+            .mwm-modal-form {
+                max-width: 95vw !important;
+                margin: 20px !important;
+            }
+            
+            .mwm-modal-form .mwm-modal-body {
+                max-height: 80vh;
+                padding: 15px;
+            }
         }
     `;
     document.head.appendChild(style);
