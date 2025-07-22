@@ -1,723 +1,397 @@
 /**
- * My Warehouse Manager - Stili CSS
+ * CSS Aggiuntivo per Modal Forms - My Warehouse Manager
  * 
- * Stili ispirati al design di AirDroid Business per un'interfaccia
- * professionale e moderna nella gestione del magazzino tablet.
+ * Stili specifici per le form Frontend Admin integrate nelle modal
+ * per un'esperienza utente ottimale.
  */
 
-/* === RESET E BASE === */
-.mwm-dashboard-wrapper {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    color: #333;
-    line-height: 1.6;
+/* === MODAL FORMS STYLING === */
+
+/* Modal form container */
+.mwm-modal-form .mwm-modal-content {
+    max-width: 900px;
+    width: 95vw;
 }
 
-.mwm-dashboard-wrapper * {
-    box-sizing: border-box;
+.mwm-modal-form .mwm-modal-body {
+    max-height: 75vh;
+    overflow-y: auto;
+    padding: 25px;
 }
 
-/* === MESSAGGI === */
-.mwm-message {
-    padding: 12px 16px;
-    margin: 20px 0;
-    border-radius: 6px;
-    font-weight: 500;
-}
-
-.mwm-message.success {
-    background: #d4edda;
-    border: 1px solid #c3e6cb;
-    color: #155724;
-}
-
-.mwm-message.error {
-    background: #f8d7da;
-    border: 1px solid #f5c6cb;
-    color: #721c24;
-}
-
-.mwm-message.warning {
-    background: #fff3cd;
-    border: 1px solid #ffeaa7;
-    color: #856404;
-}
-
-.mwm-error {
-    color: #dc3232;
-    font-weight: bold;
-    padding: 15px;
-    background: #ffe6e6;
-    border: 1px solid #ff9999;
-    border-radius: 4px;
-    margin: 15px 0;
-}
-
-/* === STATISTICHE === */
-.mwm-stats {
-    margin: 20px 0 30px 0;
-}
-
-.mwm-stats-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-    gap: 16px;
-    margin-bottom: 24px;
-}
-
-.mwm-stat-card {
-    background: white;
-    padding: 20px;
-    border-radius: 8px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+/* Azioni rapide button */
+.mwm-quick-actions {
     text-align: center;
-    border: 1px solid #e1e1e1;
-    transition: transform 0.2s ease;
+    padding: 20px 0;
+    border-bottom: 1px solid #e1e1e1;
 }
 
-.mwm-stat-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-}
-
-.mwm-stat-number {
-    font-size: 28px;
-    font-weight: 700;
-    color: #2c3e50;
-    margin-bottom: 8px;
-}
-
-.mwm-stat-label {
-    font-size: 13px;
-    color: #666;
-    text-transform: uppercase;
-    font-weight: 500;
-    letter-spacing: 0.5px;
-}
-
-/* Colori statistiche specifiche */
-.mwm-stat-available .mwm-stat-number { color: #27ae60; }
-.mwm-stat-assigned .mwm-stat-number { color: #3498db; }
-.mwm-stat-maintenance .mwm-stat-number { color: #f39c12; }
-.mwm-stat-kiosk .mwm-stat-number { color: #9b59b6; }
-.mwm-stat-sim .mwm-stat-number { color: #e74c3c; }
-
-/* === AZIONI DI GRUPPO === */
-.mwm-bulk-actions {
-    background: #f8f9fa;
-    padding: 20px;
-    border-radius: 8px;
-    margin-bottom: 24px;
-    border: 1px solid #dee2e6;
-}
-
-.mwm-bulk-controls {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    flex-wrap: wrap;
-}
-
-.mwm-bulk-controls select {
-    padding: 8px 12px;
-    border: 1px solid #ced4da;
-    border-radius: 4px;
-    font-size: 14px;
-    background: white;
+.mwm-quick-actions .mwm-btn {
+    font-size: 16px;
+    padding: 12px 24px;
     min-width: 200px;
 }
 
-.mwm-selected-count {
-    font-size: 13px;
-    color: #666;
-    font-weight: 500;
-    margin-left: auto;
-}
-
-/* === BOTTONI === */
-.mwm-btn {
-    display: inline-block;
-    padding: 8px 16px;
-    border: none;
-    border-radius: 4px;
-    font-size: 14px;
-    font-weight: 500;
-    text-decoration: none;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    text-align: center;
-}
-
-.mwm-btn:hover {
-    transform: translateY(-1px);
-    text-decoration: none;
-}
-
-.mwm-btn:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-    transform: none;
-}
-
-.mwm-btn-primary {
-    background: #007cba;
-    color: white;
-}
-
-.mwm-btn-primary:hover {
-    background: #005a87;
-    color: white;
-}
-
-.mwm-btn-secondary {
-    background: #6c757d;
-    color: white;
-}
-
-.mwm-btn-secondary:hover {
-    background: #545b62;
-    color: white;
-}
-
-.mwm-btn-small {
-    padding: 6px 10px;
-    font-size: 12px;
-    min-width: 32px;
-}
-
-.mwm-btn-view {
-    background: #17a2b8;
-    color: white;
-}
-
-.mwm-btn-view:hover {
-    background: #138496;
-    color: white;
-}
-
-.mwm-btn-edit {
-    background: #28a745;
-    color: white;
-}
-
-.mwm-btn-edit:hover {
-    background: #1e7e34;
-    color: white;
-}
-
-.mwm-btn-movement {
-    background: #fd7e14;
-    color: white;
-}
-
-.mwm-btn-movement:hover {
-    background: #e55b00;
-    color: white;
-}
-
-/* === TABELLA === */
-.mwm-table-wrapper {
-    background: white;
-    border-radius: 8px;
-    overflow: hidden;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    border: 1px solid #e1e1e1;
-}
-
-.mwm-tablets-table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 14px;
-}
-
-.mwm-tablets-table th {
-    background: #f8f9fa;
-    padding: 14px 12px;
-    text-align: left;
-    font-weight: 600;
-    color: #495057;
-    border-bottom: 2px solid #dee2e6;
-    white-space: nowrap;
-    font-size: 13px;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
-.mwm-tablets-table td {
-    padding: 14px 12px;
-    border-bottom: 1px solid #f1f1f1;
-    vertical-align: middle;
-}
-
-.mwm-tablets-table tbody tr:hover {
-    background: #f8f9fa;
-}
-
-.mwm-tablets-table tbody tr:last-child td {
-    border-bottom: none;
-}
-
-.mwm-checkbox-col {
-    width: 40px;
-    text-align: center;
-}
-
-.mwm-actions-col {
-    width: 140px;
-    text-align: center;
-}
-
-.mwm-tablet-id {
-    font-weight: 600;
-    color: #2c3e50;
-}
-
-.mwm-location {
-    max-width: 200px;
-    word-wrap: break-word;
-}
-
-.mwm-no-data {
-    text-align: center;
-    padding: 40px;
-    color: #666;
-    font-style: italic;
-}
-
-.mwm-no-data a {
-    color: #007cba;
-    text-decoration: none;
-}
-
-.mwm-no-data a:hover {
-    text-decoration: underline;
-}
-
-/* === STATUS BADGES === */
-.mwm-status {
-    display: inline-block;
-    padding: 4px 8px;
-    border-radius: 12px;
-    font-size: 11px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
-.status-active {
-    background: #d4edda;
-    color: #155724;
-}
-
-.status-inactive {
-    background: #f8d7da;
-    color: #721c24;
-}
-
-.status-partial {
-    background: #fff3cd;
-    color: #856404;
-}
-
-.status-disponibile {
-    background: #d4edda;
-    color: #155724;
-}
-
-.status-assegnato {
-    background: #cce5ff;
-    color: #004085;
-}
-
-.status-in-manutenzione,
-.status-in_manutenzione {
-    background: #ffe4cc;
-    color: #cc6600;
-}
-
-.status-venduto {
-    background: #e2e3e5;
-    color: #383d41;
-}
-
-.status-rientrato {
-    background: #d1ecf1;
-    color: #0c5460;
-}
-
-/* === AZIONI === */
-.mwm-actions {
-    display: flex;
-    gap: 4px;
-    justify-content: center;
-}
-
-/* === MODAL === */
-.mwm-modal {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0,0,0,0.5);
-    z-index: 9999;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 20px;
-}
-
-.mwm-modal-content {
-    background: white;
-    border-radius: 8px;
-    max-width: 800px;
-    width: 100%;
-    max-height: 90vh;
-    overflow-y: auto;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-}
-
-.mwm-modal-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 20px 24px;
-    border-bottom: 1px solid #e1e1e1;
-    background: #f8f9fa;
-}
-
-.mwm-modal-header h3 {
+/* Frontend Admin form styling in modals */
+.mwm-frontend-form-wrapper {
     margin: 0;
-    color: #2c3e50;
-    font-size: 18px;
-    font-weight: 600;
+    padding: 0;
 }
 
+.mwm-frontend-form-wrapper .frontend-admin-form {
+    background: none !important;
+    box-shadow: none !important;
+    border: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+}
+
+/* Form fields in modal */
+.mwm-modal .frontend-admin-form .acf-field {
+    margin-bottom: 20px;
+    border-bottom: none !important;
+    padding: 0 !important;
+}
+
+.mwm-modal .frontend-admin-form .acf-label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: #333;
+    font-size: 14px;
+}
+
+.mwm-modal .frontend-admin-form .acf-input {
+    position: relative;
+}
+
+.mwm-modal .frontend-admin-form input[type="text"],
+.mwm-modal .frontend-admin-form input[type="email"],
+.mwm-modal .frontend-admin-form input[type="date"],
+.mwm-modal .frontend-admin-form input[type="number"],
+.mwm-modal .frontend-admin-form select,
+.mwm-modal .frontend-admin-form textarea {
+    width: 100% !important;
+    padding: 12px 15px !important;
+    border: 2px solid #e1e1e1 !important;
+    border-radius: 6px !important;
+    font-size: 14px !important;
+    line-height: 1.4 !important;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease !important;
+    box-sizing: border-box !important;
+    background: white !important;
+}
+
+.mwm-modal .frontend-admin-form input:focus,
+.mwm-modal .frontend-admin-form select:focus,
+.mwm-modal .frontend-admin-form textarea:focus {
+    outline: none !important;
+    border-color: #007cba !important;
+    box-shadow: 0 0 0 3px rgba(0, 124, 186, 0.1) !important;
+}
+
+.mwm-modal .frontend-admin-form select {
+    cursor: pointer !important;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e") !important;
+    background-position: right 12px center !important;
+    background-repeat: no-repeat !important;
+    background-size: 16px !important;
+    padding-right: 40px !important;
+}
+
+.mwm-modal .frontend-admin-form textarea {
+    min-height: 100px !important;
+    resize: vertical !important;
+}
+
+/* True/False (checkbox) fields */
+.mwm-modal .frontend-admin-form .acf-field-true-false {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 15px 0;
+}
+
+.mwm-modal .frontend-admin-form .acf-field-true-false .acf-label {
+    margin: 0;
+    order: 2;
+}
+
+.mwm-modal .frontend-admin-form .acf-field-true-false input[type="checkbox"] {
+    width: 20px !important;
+    height: 20px !important;
+    border: 2px solid #e1e1e1 !important;
+    border-radius: 4px !important;
+    order: 1;
+}
+
+/* Submit button styling */
+.mwm-modal .frontend-admin-form .acf-form-submit {
+    text-align: center;
+    padding-top: 25px;
+    margin-top: 25px;
+    border-top: 1px solid #e1e1e1;
+}
+
+.mwm-modal .frontend-admin-form input[type="submit"],
+.mwm-modal .frontend-admin-form button[type="submit"] {
+    background: linear-gradient(135deg, #007cba 0%, #005a87 100%) !important;
+    color: white !important;
+    padding: 14px 32px !important;
+    border: none !important;
+    border-radius: 6px !important;
+    font-size: 15px !important;
+    font-weight: 600 !important;
+    cursor: pointer !important;
+    transition: all 0.2s ease !important;
+    box-shadow: 0 2px 4px rgba(0, 124, 186, 0.2) !important;
+    min-width: 150px !important;
+    width: auto !important;
+}
+
+.mwm-modal .frontend-admin-form input[type="submit"]:hover,
+.mwm-modal .frontend-admin-form button[type="submit"]:hover {
+    transform: translateY(-1px) !important;
+    box-shadow: 0 4px 8px rgba(0, 124, 186, 0.3) !important;
+    background: linear-gradient(135deg, #005a87 0%, #004066 100%) !important;
+}
+
+.mwm-modal .frontend-admin-form input[type="submit"]:disabled,
+.mwm-modal .frontend-admin-form button[type="submit"]:disabled {
+    opacity: 0.6 !important;
+    cursor: not-allowed !important;
+    transform: none !important;
+    box-shadow: none !important;
+}
+
+/* Validation errors */
+.mwm-modal .frontend-admin-form .acf-error-message {
+    color: #dc3232 !important;
+    font-size: 13px !important;
+    margin-top: 6px !important;
+    display: block !important;
+    font-weight: 500 !important;
+}
+
+.mwm-modal .frontend-admin-form .acf-field.acf-field-error input,
+.mwm-modal .frontend-admin-form .acf-field.acf-field-error select,
+.mwm-modal .frontend-admin-form .acf-field.acf-field-error textarea {
+    border-color: #dc3232 !important;
+    box-shadow: 0 0 0 3px rgba(220, 50, 50, 0.1) !important;
+}
+
+/* Success messages */
+.mwm-form-success {
+    background: #d4edda;
+    color: #155724;
+    padding: 12px 16px;
+    border: 1px solid #c3e6cb;
+    border-radius: 6px;
+    margin-bottom: 20px;
+    font-weight: 500;
+}
+
+/* Loading states */
+.mwm-modal .frontend-admin-form.loading {
+    position: relative;
+    opacity: 0.7;
+    pointer-events: none;
+}
+
+.mwm-modal .frontend-admin-form.loading::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 30px;
+    height: 30px;
+    border: 3px solid #f3f3f3;
+    border-top: 3px solid #007cba;
+    border-radius: 50%;
+    animation: mwm-form-spin 1s linear infinite;
+    z-index: 999;
+}
+
+@keyframes mwm-form-spin {
+    0% { transform: translate(-50%, -50%) rotate(0deg); }
+    100% { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+/* === ENHANCED MODAL STYLES === */
+
+/* Modal backdrop animation */
+.mwm-modal {
+    animation: mwm-modal-backdrop-fade-in 0.3s ease-out;
+}
+
+@keyframes mwm-modal-backdrop-fade-in {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+/* Modal content slide animation */
+.mwm-modal-content {
+    animation: mwm-modal-slide-in 0.3s ease-out;
+}
+
+@keyframes mwm-modal-slide-in {
+    from {
+        opacity: 0;
+        transform: scale(0.95) translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+/* Enhanced modal header */
+.mwm-modal-header {
+    position: sticky;
+    top: 0;
+    background: white;
+    z-index: 10;
+    border-bottom: 2px solid #e1e1e1;
+}
+
+/* Enhanced close button */
 .mwm-modal-close {
-    font-size: 24px;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    transition: all 0.2s ease;
     cursor: pointer;
+    font-size: 24px;
+    line-height: 1;
     color: #666;
-    padding: 0 8px;
-    transition: color 0.2s ease;
+    border: none;
+    background: transparent;
 }
 
 .mwm-modal-close:hover {
+    background: #f0f0f0;
     color: #333;
+    transform: scale(1.1);
 }
 
-.mwm-modal-body {
-    padding: 24px;
-}
-
-.mwm-loading {
-    text-align: center;
-    padding: 40px;
-    color: #666;
-    font-style: italic;
-}
-
-/* === DETTAGLI TABLET === */
-.mwm-tablet-details {
-    font-size: 14px;
-}
-
-.mwm-detail-header {
-    margin-bottom: 24px;
-    padding-bottom: 16px;
-    border-bottom: 1px solid #e1e1e1;
-}
-
-.mwm-detail-header h4 {
-    margin: 0 0 8px 0;
-    font-size: 20px;
-    color: #2c3e50;
-    font-weight: 600;
-}
-
-.mwm-detail-meta {
-    display: flex;
-    gap: 16px;
-    font-size: 12px;
-    color: #666;
-}
-
-.mwm-detail-section {
-    margin-bottom: 24px;
-}
-
-.mwm-detail-section h5 {
-    margin: 0 0 12px 0;
-    font-size: 16px;
-    color: #495057;
-    font-weight: 600;
-    padding-bottom: 8px;
-    border-bottom: 2px solid #e9ecef;
-}
-
-.mwm-detail-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 12px;
-}
-
-.mwm-detail-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 8px 0;
-}
-
-.mwm-detail-item label {
-    font-weight: 500;
-    color: #495057;
-    margin-right: 12px;
-}
-
-.mwm-detail-item span {
-    text-align: right;
-    flex-shrink: 0;
-}
-
-.mwm-mono {
-    font-family: 'Courier New', monospace;
-    background: #f8f9fa;
-    padding: 2px 6px;
-    border-radius: 3px;
-    font-size: 13px;
-}
-
-.mwm-sensitive {
-    cursor: pointer;
-    user-select: all;
-}
-
-.mwm-location-current {
-    font-weight: 600;
-    color: #007cba;
-}
-
-.mwm-detail-notes {
-    background: #f8f9fa;
-    padding: 12px;
-    border-radius: 4px;
-    border-left: 4px solid #007cba;
-    font-style: italic;
-    color: #495057;
-}
-
-.mwm-detail-actions {
-    margin-top: 24px;
-    padding-top: 16px;
-    border-top: 1px solid #e1e1e1;
-    display: flex;
-    gap: 12px;
-    justify-content: center;
-}
-
-/* === CRONOLOGIA MOVIMENTI === */
-.mwm-history-wrapper {
-    background: white;
-    padding: 24px;
-    border-radius: 8px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-}
-
-.mwm-history-filters {
-    display: flex;
-    gap: 16px;
-    margin-bottom: 24px;
-    flex-wrap: wrap;
-}
-
-.mwm-history-filters input,
-.mwm-history-filters select {
-    padding: 8px 12px;
-    border: 1px solid #ced4da;
-    border-radius: 4px;
-    font-size: 14px;
-}
-
-.mwm-history-table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 14px;
-    background: white;
-}
-
-.mwm-history-table th,
-.mwm-history-table td {
-    padding: 12px;
-    text-align: left;
-    border-bottom: 1px solid #e1e1e1;
-}
-
-.mwm-history-table th {
-    background: #f8f9fa;
-    font-weight: 600;
-    color: #495057;
-}
-
-.mwm-history-table tbody tr:hover {
-    background: #f8f9fa;
-}
-
-.mwm-document-link {
-    color: #007cba;
-    text-decoration: none;
-    font-size: 12px;
-}
-
-.mwm-document-link:hover {
-    text-decoration: underline;
-}
-
-/* === PAGINAZIONE === */
-.mwm-pagination {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 8px;
-    margin-top: 24px;
-}
-
-.mwm-pagination a,
-.mwm-pagination span {
-    padding: 8px 12px;
-    border: 1px solid #dee2e6;
-    border-radius: 4px;
-    text-decoration: none;
-    color: #495057;
-    font-size: 14px;
-}
-
-.mwm-pagination a:hover {
-    background: #e9ecef;
-    text-decoration: none;
-}
-
-.mwm-pagination .current {
-    background: #007cba;
-    color: white;
-    border-color: #007cba;
-}
-
-/* === RESPONSIVE === */
+/* Mobile optimizations */
 @media (max-width: 768px) {
-    .mwm-stats-grid {
-        grid-template-columns: repeat(2, 1fr);
+    .mwm-modal-form .mwm-modal-content {
+        width: 100vw;
+        height: 100vh;
+        max-width: none;
+        max-height: none;
+        margin: 0;
+        border-radius: 0;
     }
     
-    .mwm-bulk-controls {
-        flex-direction: column;
-        align-items: stretch;
+    .mwm-modal-form .mwm-modal-body {
+        max-height: calc(100vh - 80px);
+        padding: 20px 15px;
     }
     
-    .mwm-bulk-controls select {
-        min-width: auto;
+    .mwm-modal .frontend-admin-form input,
+    .mwm-modal .frontend-admin-form select,
+    .mwm-modal .frontend-admin-form textarea {
+        font-size: 16px !important; /* Prevent zoom on iOS */
+        padding: 15px !important;
     }
     
-    .mwm-tablets-table {
-        font-size: 12px;
+    .mwm-modal .frontend-admin-form input[type="submit"],
+    .mwm-modal .frontend-admin-form button[type="submit"] {
+        width: 100% !important;
+        padding: 16px 20px !important;
+        font-size: 16px !important;
     }
     
-    .mwm-tablets-table th,
-    .mwm-tablets-table td {
-        padding: 8px 6px;
+    .mwm-quick-actions .mwm-btn {
+        width: 100%;
+        max-width: 300px;
+    }
+}
+
+/* Tablet landscape optimizations */
+@media (max-width: 1024px) and (orientation: landscape) {
+    .mwm-modal-form .mwm-modal-content {
+        max-height: 90vh;
     }
     
-    .mwm-detail-grid {
-        grid-template-columns: 1fr;
+    .mwm-modal-form .mwm-modal-body {
+        max-height: calc(90vh - 80px);
+    }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+    .mwm-modal .frontend-admin-form input,
+    .mwm-modal .frontend-admin-form select,
+    .mwm-modal .frontend-admin-form textarea {
+        border-width: 2px !important;
     }
     
-    .mwm-detail-item {
-        flex-direction: column;
-        align-items: flex-start;
+    .mwm-modal .frontend-admin-form input:focus,
+    .mwm-modal .frontend-admin-form select:focus,
+    .mwm-modal .frontend-admin-form textarea:focus {
+        border-width: 3px !important;
     }
-    
-    .mwm-detail-item span {
-        text-align: left;
-        margin-top: 4px;
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+    .mwm-modal,
+    .mwm-modal-content,
+    .mwm-modal .frontend-admin-form input,
+    .mwm-modal .frontend-admin-form select,
+    .mwm-modal .frontend-admin-form textarea,
+    .mwm-modal-close {
+        animation: none !important;
+        transition: none !important;
     }
-    
-    .mwm-detail-actions {
-        flex-direction: column;
-    }
-    
-    .mwm-history-filters {
-        flex-direction: column;
-    }
-    
+}
+
+/* Dark mode support (if theme supports it) */
+@media (prefers-color-scheme: dark) {
     .mwm-modal-content {
-        margin: 10px;
-        max-height: calc(100vh - 40px);
-    }
-}
-
-@media (max-width: 480px) {
-    .mwm-stats-grid {
-        grid-template-columns: 1fr;
+        background: #1a1a1a;
+        color: #e1e1e1;
     }
     
-    .mwm-actions {
-        flex-direction: column;
-        gap: 2px;
+    .mwm-modal-header {
+        background: #1a1a1a;
+        border-bottom-color: #333;
     }
     
-    /* Nascondi alcune colonne su mobile molto piccolo */
-    .mwm-tablets-table .mwm-hide-mobile {
-        display: none;
+    .mwm-modal .frontend-admin-form input,
+    .mwm-modal .frontend-admin-form select,
+    .mwm-modal .frontend-admin-form textarea {
+        background: #2a2a2a !important;
+        border-color: #444 !important;
+        color: #e1e1e1 !important;
+    }
+    
+    .mwm-modal .frontend-admin-form input:focus,
+    .mwm-modal .frontend-admin-form select:focus,
+    .mwm-modal .frontend-admin-form textarea:focus {
+        border-color: #007cba !important;
+        box-shadow: 0 0 0 3px rgba(0, 124, 186, 0.2) !important;
+    }
+    
+    .mwm-modal .frontend-admin-form .acf-label {
+        color: #e1e1e1;
     }
 }
 
-/* === ANIMAZIONI === */
-@keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
-}
-
-@keyframes slideIn {
-    from { 
-        opacity: 0;
-        transform: translateY(-10px);
+/* Print styles (nasconde modal se qualcuno cerca di stampare) */
+@media print {
+    .mwm-modal {
+        display: none !important;
     }
-    to { 
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-.mwm-modal {
-    animation: fadeIn 0.3s ease;
-}
-
-.mwm-modal-content {
-    animation: slideIn 0.3s ease;
-}
-
-.mwm-message {
-    animation: slideIn 0.3s ease;
-}
-
-/* === BREADCRUMB === */
-.mwm-breadcrumb {
-    margin: 0 0 20px 0;
-    font-size: 14px;
-}
-
-.mwm-breadcrumb a {
-    color: #007cba;
-    text-decoration: none;
-}
-
-.mwm-breadcrumb a:hover {
-    text-decoration: underline;
-}
-
-.mwm-breadcrumb-separator {
-    margin: 0 8px;
-    color: #666;
-}
-
-.mwm-breadcrumb-current {
-    color: #666;
-    font-weight: 500;
 }
