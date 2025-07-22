@@ -1,0 +1,723 @@
+/**
+ * My Warehouse Manager - Stili CSS
+ * 
+ * Stili ispirati al design di AirDroid Business per un'interfaccia
+ * professionale e moderna nella gestione del magazzino tablet.
+ */
+
+/* === RESET E BASE === */
+.mwm-dashboard-wrapper {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    color: #333;
+    line-height: 1.6;
+}
+
+.mwm-dashboard-wrapper * {
+    box-sizing: border-box;
+}
+
+/* === MESSAGGI === */
+.mwm-message {
+    padding: 12px 16px;
+    margin: 20px 0;
+    border-radius: 6px;
+    font-weight: 500;
+}
+
+.mwm-message.success {
+    background: #d4edda;
+    border: 1px solid #c3e6cb;
+    color: #155724;
+}
+
+.mwm-message.error {
+    background: #f8d7da;
+    border: 1px solid #f5c6cb;
+    color: #721c24;
+}
+
+.mwm-message.warning {
+    background: #fff3cd;
+    border: 1px solid #ffeaa7;
+    color: #856404;
+}
+
+.mwm-error {
+    color: #dc3232;
+    font-weight: bold;
+    padding: 15px;
+    background: #ffe6e6;
+    border: 1px solid #ff9999;
+    border-radius: 4px;
+    margin: 15px 0;
+}
+
+/* === STATISTICHE === */
+.mwm-stats {
+    margin: 20px 0 30px 0;
+}
+
+.mwm-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.mwm-stat-card {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    text-align: center;
+    border: 1px solid #e1e1e1;
+    transition: transform 0.2s ease;
+}
+
+.mwm-stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.mwm-stat-number {
+    font-size: 28px;
+    font-weight: 700;
+    color: #2c3e50;
+    margin-bottom: 8px;
+}
+
+.mwm-stat-label {
+    font-size: 13px;
+    color: #666;
+    text-transform: uppercase;
+    font-weight: 500;
+    letter-spacing: 0.5px;
+}
+
+/* Colori statistiche specifiche */
+.mwm-stat-available .mwm-stat-number { color: #27ae60; }
+.mwm-stat-assigned .mwm-stat-number { color: #3498db; }
+.mwm-stat-maintenance .mwm-stat-number { color: #f39c12; }
+.mwm-stat-kiosk .mwm-stat-number { color: #9b59b6; }
+.mwm-stat-sim .mwm-stat-number { color: #e74c3c; }
+
+/* === AZIONI DI GRUPPO === */
+.mwm-bulk-actions {
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 8px;
+    margin-bottom: 24px;
+    border: 1px solid #dee2e6;
+}
+
+.mwm-bulk-controls {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.mwm-bulk-controls select {
+    padding: 8px 12px;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    font-size: 14px;
+    background: white;
+    min-width: 200px;
+}
+
+.mwm-selected-count {
+    font-size: 13px;
+    color: #666;
+    font-weight: 500;
+    margin-left: auto;
+}
+
+/* === BOTTONI === */
+.mwm-btn {
+    display: inline-block;
+    padding: 8px 16px;
+    border: none;
+    border-radius: 4px;
+    font-size: 14px;
+    font-weight: 500;
+    text-decoration: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-align: center;
+}
+
+.mwm-btn:hover {
+    transform: translateY(-1px);
+    text-decoration: none;
+}
+
+.mwm-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.mwm-btn-primary {
+    background: #007cba;
+    color: white;
+}
+
+.mwm-btn-primary:hover {
+    background: #005a87;
+    color: white;
+}
+
+.mwm-btn-secondary {
+    background: #6c757d;
+    color: white;
+}
+
+.mwm-btn-secondary:hover {
+    background: #545b62;
+    color: white;
+}
+
+.mwm-btn-small {
+    padding: 6px 10px;
+    font-size: 12px;
+    min-width: 32px;
+}
+
+.mwm-btn-view {
+    background: #17a2b8;
+    color: white;
+}
+
+.mwm-btn-view:hover {
+    background: #138496;
+    color: white;
+}
+
+.mwm-btn-edit {
+    background: #28a745;
+    color: white;
+}
+
+.mwm-btn-edit:hover {
+    background: #1e7e34;
+    color: white;
+}
+
+.mwm-btn-movement {
+    background: #fd7e14;
+    color: white;
+}
+
+.mwm-btn-movement:hover {
+    background: #e55b00;
+    color: white;
+}
+
+/* === TABELLA === */
+.mwm-table-wrapper {
+    background: white;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    border: 1px solid #e1e1e1;
+}
+
+.mwm-tablets-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+
+.mwm-tablets-table th {
+    background: #f8f9fa;
+    padding: 14px 12px;
+    text-align: left;
+    font-weight: 600;
+    color: #495057;
+    border-bottom: 2px solid #dee2e6;
+    white-space: nowrap;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.mwm-tablets-table td {
+    padding: 14px 12px;
+    border-bottom: 1px solid #f1f1f1;
+    vertical-align: middle;
+}
+
+.mwm-tablets-table tbody tr:hover {
+    background: #f8f9fa;
+}
+
+.mwm-tablets-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.mwm-checkbox-col {
+    width: 40px;
+    text-align: center;
+}
+
+.mwm-actions-col {
+    width: 140px;
+    text-align: center;
+}
+
+.mwm-tablet-id {
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+.mwm-location {
+    max-width: 200px;
+    word-wrap: break-word;
+}
+
+.mwm-no-data {
+    text-align: center;
+    padding: 40px;
+    color: #666;
+    font-style: italic;
+}
+
+.mwm-no-data a {
+    color: #007cba;
+    text-decoration: none;
+}
+
+.mwm-no-data a:hover {
+    text-decoration: underline;
+}
+
+/* === STATUS BADGES === */
+.mwm-status {
+    display: inline-block;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.status-active {
+    background: #d4edda;
+    color: #155724;
+}
+
+.status-inactive {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+.status-partial {
+    background: #fff3cd;
+    color: #856404;
+}
+
+.status-disponibile {
+    background: #d4edda;
+    color: #155724;
+}
+
+.status-assegnato {
+    background: #cce5ff;
+    color: #004085;
+}
+
+.status-in-manutenzione,
+.status-in_manutenzione {
+    background: #ffe4cc;
+    color: #cc6600;
+}
+
+.status-venduto {
+    background: #e2e3e5;
+    color: #383d41;
+}
+
+.status-rientrato {
+    background: #d1ecf1;
+    color: #0c5460;
+}
+
+/* === AZIONI === */
+.mwm-actions {
+    display: flex;
+    gap: 4px;
+    justify-content: center;
+}
+
+/* === MODAL === */
+.mwm-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.mwm-modal-content {
+    background: white;
+    border-radius: 8px;
+    max-width: 800px;
+    width: 100%;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+}
+
+.mwm-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 24px;
+    border-bottom: 1px solid #e1e1e1;
+    background: #f8f9fa;
+}
+
+.mwm-modal-header h3 {
+    margin: 0;
+    color: #2c3e50;
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.mwm-modal-close {
+    font-size: 24px;
+    cursor: pointer;
+    color: #666;
+    padding: 0 8px;
+    transition: color 0.2s ease;
+}
+
+.mwm-modal-close:hover {
+    color: #333;
+}
+
+.mwm-modal-body {
+    padding: 24px;
+}
+
+.mwm-loading {
+    text-align: center;
+    padding: 40px;
+    color: #666;
+    font-style: italic;
+}
+
+/* === DETTAGLI TABLET === */
+.mwm-tablet-details {
+    font-size: 14px;
+}
+
+.mwm-detail-header {
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid #e1e1e1;
+}
+
+.mwm-detail-header h4 {
+    margin: 0 0 8px 0;
+    font-size: 20px;
+    color: #2c3e50;
+    font-weight: 600;
+}
+
+.mwm-detail-meta {
+    display: flex;
+    gap: 16px;
+    font-size: 12px;
+    color: #666;
+}
+
+.mwm-detail-section {
+    margin-bottom: 24px;
+}
+
+.mwm-detail-section h5 {
+    margin: 0 0 12px 0;
+    font-size: 16px;
+    color: #495057;
+    font-weight: 600;
+    padding-bottom: 8px;
+    border-bottom: 2px solid #e9ecef;
+}
+
+.mwm-detail-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 12px;
+}
+
+.mwm-detail-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+}
+
+.mwm-detail-item label {
+    font-weight: 500;
+    color: #495057;
+    margin-right: 12px;
+}
+
+.mwm-detail-item span {
+    text-align: right;
+    flex-shrink: 0;
+}
+
+.mwm-mono {
+    font-family: 'Courier New', monospace;
+    background: #f8f9fa;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 13px;
+}
+
+.mwm-sensitive {
+    cursor: pointer;
+    user-select: all;
+}
+
+.mwm-location-current {
+    font-weight: 600;
+    color: #007cba;
+}
+
+.mwm-detail-notes {
+    background: #f8f9fa;
+    padding: 12px;
+    border-radius: 4px;
+    border-left: 4px solid #007cba;
+    font-style: italic;
+    color: #495057;
+}
+
+.mwm-detail-actions {
+    margin-top: 24px;
+    padding-top: 16px;
+    border-top: 1px solid #e1e1e1;
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+}
+
+/* === CRONOLOGIA MOVIMENTI === */
+.mwm-history-wrapper {
+    background: white;
+    padding: 24px;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.mwm-history-filters {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+}
+
+.mwm-history-filters input,
+.mwm-history-filters select {
+    padding: 8px 12px;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.mwm-history-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+    background: white;
+}
+
+.mwm-history-table th,
+.mwm-history-table td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid #e1e1e1;
+}
+
+.mwm-history-table th {
+    background: #f8f9fa;
+    font-weight: 600;
+    color: #495057;
+}
+
+.mwm-history-table tbody tr:hover {
+    background: #f8f9fa;
+}
+
+.mwm-document-link {
+    color: #007cba;
+    text-decoration: none;
+    font-size: 12px;
+}
+
+.mwm-document-link:hover {
+    text-decoration: underline;
+}
+
+/* === PAGINAZIONE === */
+.mwm-pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    margin-top: 24px;
+}
+
+.mwm-pagination a,
+.mwm-pagination span {
+    padding: 8px 12px;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    text-decoration: none;
+    color: #495057;
+    font-size: 14px;
+}
+
+.mwm-pagination a:hover {
+    background: #e9ecef;
+    text-decoration: none;
+}
+
+.mwm-pagination .current {
+    background: #007cba;
+    color: white;
+    border-color: #007cba;
+}
+
+/* === RESPONSIVE === */
+@media (max-width: 768px) {
+    .mwm-stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .mwm-bulk-controls {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .mwm-bulk-controls select {
+        min-width: auto;
+    }
+    
+    .mwm-tablets-table {
+        font-size: 12px;
+    }
+    
+    .mwm-tablets-table th,
+    .mwm-tablets-table td {
+        padding: 8px 6px;
+    }
+    
+    .mwm-detail-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .mwm-detail-item {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .mwm-detail-item span {
+        text-align: left;
+        margin-top: 4px;
+    }
+    
+    .mwm-detail-actions {
+        flex-direction: column;
+    }
+    
+    .mwm-history-filters {
+        flex-direction: column;
+    }
+    
+    .mwm-modal-content {
+        margin: 10px;
+        max-height: calc(100vh - 40px);
+    }
+}
+
+@media (max-width: 480px) {
+    .mwm-stats-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .mwm-actions {
+        flex-direction: column;
+        gap: 2px;
+    }
+    
+    /* Nascondi alcune colonne su mobile molto piccolo */
+    .mwm-tablets-table .mwm-hide-mobile {
+        display: none;
+    }
+}
+
+/* === ANIMAZIONI === */
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideIn {
+    from { 
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to { 
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.mwm-modal {
+    animation: fadeIn 0.3s ease;
+}
+
+.mwm-modal-content {
+    animation: slideIn 0.3s ease;
+}
+
+.mwm-message {
+    animation: slideIn 0.3s ease;
+}
+
+/* === BREADCRUMB === */
+.mwm-breadcrumb {
+    margin: 0 0 20px 0;
+    font-size: 14px;
+}
+
+.mwm-breadcrumb a {
+    color: #007cba;
+    text-decoration: none;
+}
+
+.mwm-breadcrumb a:hover {
+    text-decoration: underline;
+}
+
+.mwm-breadcrumb-separator {
+    margin: 0 8px;
+    color: #666;
+}
+
+.mwm-breadcrumb-current {
+    color: #666;
+    font-weight: 500;
+}
