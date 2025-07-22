@@ -2,8 +2,8 @@
 /**
  * Classe principale per la gestione del magazzino
  * 
- * Gestisce la logica centrale del plugin, inclusi i custom post type,
- * le tassonomie e le operazioni principali sui tablet.
+ * Gestisce la logica centrale del plugin con tassonomia destinazione unificata.
+ * Versione senza controlli di sicurezza per sviluppo.
  */
 
 // Previeni accesso diretto
@@ -21,12 +21,12 @@ class MWM_Warehouse_Manager {
     /**
      * Custom post types supportati
      */
-    private $post_types = array('tablet', 'movimento_magazzino');
+    private $post_types = array('tablet');
     
     /**
-     * Tassonomie supportate
+     * Tassonomie supportate (aggiornate)
      */
-    private $taxonomies = array('destinazioni_interne', 'progetti_esterni');
+    private $taxonomies = array('destinazione');
     
     /**
      * Costruttore privato
@@ -55,8 +55,9 @@ class MWM_Warehouse_Manager {
         // Hook per azioni di gruppo (bulk actions)
         add_action('wp_ajax_mwm_bulk_action', array($this, 'handle_bulk_action'));
         
-        // Hook per validazione form Frontend Admin
-        add_action('frontend_admin/form/after_save', array($this, 'handle_frontend_form_save'), 10, 2);
+        // Hook per gestione Frontend Admin
+        add_action('frontend_admin/forms/edit_post/after_save', array($this, 'handle_tablet_save'), 10, 2);
+        add_action('frontend_admin/forms/new_post/after_save', array($this, 'handle_tablet_save'), 10, 2);
     }
     
     /**
@@ -94,11 +95,6 @@ class MWM_Warehouse_Manager {
      * Gestisce azioni di gruppo sui tablet
      */
     public function handle_bulk_action() {
-        // Verifica nonce e permessi
-        if (!wp_verify_nonce($_POST['nonce'], 'warehouse_manager_nonce') || !current_user_can('administrator')) {
-            wp_die('Accesso non autorizzato');
-        }
-        
         $action = sanitize_text_field($_POST['bulk_action']);
         $tablet_ids = array_map('intval', $_POST['tablet_ids']);
         
@@ -138,6 +134,9 @@ class MWM_Warehouse_Manager {
             
             if ($success) {
                 $updated_count++;
+                
+                // Log dell'operazione
+                mwm_log("Bulk action '{$action}' applicata a tablet ID: {$tablet_id}", 'info');
             }
         }
         
@@ -148,41 +147,49 @@ class MWM_Warehouse_Manager {
     }
     
     /**
-     * Gestisce salvataggio form Frontend Admin
+     * Gestisce salvataggio tablet via Frontend Admin
      */
-    public function handle_frontend_form_save($post_id, $form_id) {
-        // Logica per gestire salvataggi specifici
-        // Questo hook sarà chiamato dopo ogni salvataggio di Frontend Admin
-        
-        // Se è un form di movimento, crea anche il log
-        if (get_post_type($post_id) === 'movimento_magazzino') {
-            $this->create_movimento_log($post_id);
+    public function handle_tablet_save($post_id, $form) {
+        if (get_post_type($post_id) !== 'tablet') {
+            return;
         }
         
-        // Se è un tablet modificato, aggiorna timestamp ultima modifica
-        if (get_post_type($post_id) === 'tablet') {
-            update_field('ultima_modifica', current_time('mysql'), $post_id);
-        }
+        // Log del salvataggio
+        mwm_log("Tablet salvato via Frontend Admin - ID: {$post_id}", 'info');
+        
+        // Aggiorna timestamp ultima modifica
+        update_field('ultima_modifica', current_time('mysql'), $post_id);
+        
+        // Gestisci logica speciale per SIM
+        $this->handle_sim_logic($post_id);
+        
+        // Hook personalizzato per dopo il salvataggio tablet
+        do_action('mwm_after_tablet_save', $post_id, $form);
     }
     
     /**
-     * Crea log dettagliato per movimento
+     * Gestisce logica condizionale per campi SIM
      */
-    private function create_movimento_log($movimento_id) {
-        // Per ora solo log, in futuro potremmo aggiungere notifiche
-        $movimento = get_post($movimento_id);
-        $tablet_coinvolto = get_field('tablet_coinvolto', $movimento_id);
+    private function handle_sim_logic($tablet_id) {
+        $sim_inserita = get_field('sim_inserita', $tablet_id);
+        $sim_attiva = get_field('sim_attiva', $tablet_id);
         
-        if ($tablet_coinvolto) {
-            $tablet_title = $tablet_coinvolto->post_title;
-            $tipo_movimento = get_field('tipo_di_movimento', $movimento_id);
+        // Se SIM attiva è impostata a Sì, assicurati che SIM inserita sia Sì
+        if ($sim_attiva && !$sim_inserita) {
+            update_field('sim_inserita', 1, $tablet_id);
+            mwm_log("Auto-impostata SIM inserita per tablet ID: {$tablet_id}", 'info');
+        }
+        
+        // Se SIM inserita è impostata a No, disattiva anche SIM attiva
+        if (!$sim_inserita && $sim_attiva) {
+            update_field('sim_attiva', 0, $tablet_id);
             
-            error_log(sprintf(
-                'Movimento registrato: %s per tablet %s (ID: %d)',
-                $tipo_movimento,
-                $tablet_title,
-                $tablet_coinvolto->ID
-            ));
+            // Pulisci campi SIM correlati
+            update_field('sn_sim', '', $tablet_id);
+            update_field('pin_sim', '', $tablet_id);
+            update_field('puk_sim', '', $tablet_id);
+            
+            mwm_log("Auto-disattivata SIM e puliti dati per tablet ID: {$tablet_id}", 'info');
         }
     }
     
@@ -203,71 +210,194 @@ class MWM_Warehouse_Manager {
     }
     
     /**
-     * Utility: Ottieni movimenti con filtri
+     * Utility: Filtra tablet per destinazione
      */
-    public function get_movimenti($args = array()) {
-        $default_args = array(
-            'post_type' => 'movimento_magazzino',
-            'post_status' => 'publish',
-            'posts_per_page' => 20,
-            'orderby' => 'date',
-            'order' => 'DESC'
-        );
+    public function get_tablets_by_destination($destination_term_id) {
+        $tablets = $this->get_tablets();
+        $filtered = array();
         
-        $args = wp_parse_args($args, $default_args);
-        
-        return get_posts($args);
-    }
-    
-    /**
-     * Utility: Genera titolo automatico per movimento
-     */
-    public function generate_movimento_title($tablet_id, $data_movimento = null) {
-        if (!$data_movimento) {
-            $data_movimento = current_time('Y-m-d');
-        }
-        
-        $tablet = get_post($tablet_id);
-        $tablet_title = $tablet ? $tablet->post_title : 'Unknown';
-        
-        return sprintf('Movimento %s - %s', $tablet_title, $data_movimento);
-    }
-    
-    /**
-     * Utility: Ottieni opzioni per campo ubicazione_attuale_tablet
-     */
-    public function get_ubicazione_options() {
-        $options = array(
-            '' => '--- Nessuna Assegnazione ---'
-        );
-        
-        // Aggiungi destinazioni interne
-        $destinazioni = get_terms(array(
-            'taxonomy' => 'destinazioni_interne',
-            'hide_empty' => false
-        ));
-        
-        if (!is_wp_error($destinazioni) && !empty($destinazioni)) {
-            $options['--- DESTINAZIONI INTERNE ---'] = '--- DESTINAZIONI INTERNE ---';
-            foreach ($destinazioni as $term) {
-                $prefix = $term->parent ? '— ' : '';
-                $options[$term->name] = $prefix . $term->name;
+        foreach ($tablets as $tablet) {
+            $tablet_destination = get_field('dove', $tablet->ID);
+            
+            if ($tablet_destination && is_object($tablet_destination) && $tablet_destination->term_id == $destination_term_id) {
+                $filtered[] = $tablet;
             }
         }
         
-        // Aggiungi progetti esterni
-        $progetti = get_terms(array(
-            'taxonomy' => 'progetti_esterni',
-            'hide_empty' => false
+        return $filtered;
+    }
+    
+    /**
+     * Utility: Ottieni opzioni per campo destinazione
+     */
+    public function get_destinazione_options() {
+        $options = array(
+            '' => '--- Non Assegnato ---'
+        );
+        
+        // Ottieni tutte le destinazioni dalla tassonomia unificata
+        $destinazioni = get_terms(array(
+            'taxonomy' => 'destinazione',
+            'hide_empty' => false,
+            'orderby' => 'name',
+            'order' => 'ASC'
         ));
         
-        if (!is_wp_error($progetti) && !empty($progetti)) {
-            $options['--- PROGETTI ESTERNI ---'] = '--- PROGETTI ESTERNI ---';
-            foreach ($progetti as $term) {
-                $options[$term->name] = $term->name;
+        if (!is_wp_error($destinazioni) && !empty($destinazioni)) {
+            foreach ($destinazioni as $term) {
+                $prefix = $term->parent ? '— ' : '';
+                $options[$term->term_id] = $prefix . $term->name;
             }
         }
         
         return $options;
+    }
+    
+    /**
+     * Utility: Ottieni statistiche destinazioni
+     */
+    public function get_destination_stats() {
+        $tablets = $this->get_tablets();
+        $stats = array();
+        
+        foreach ($tablets as $tablet) {
+            $destinazione = get_field('dove', $tablet->ID);
+            
+            if ($destinazione && is_object($destinazione)) {
+                $dest_name = $destinazione->name;
+                
+                if (!isset($stats[$dest_name])) {
+                    $stats[$dest_name] = array(
+                        'totale' => 0,
+                        'disponibili' => 0,
+                        'assegnati' => 0,
+                        'in_manutenzione' => 0
+                    );
+                }
+                
+                $stats[$dest_name]['totale']++;
+                
+                $stato = get_field('stato_dispositivo', $tablet->ID);
+                
+                switch ($stato) {
+                    case 'disponibile':
+                        $stats[$dest_name]['disponibili']++;
+                        break;
+                    case 'assegnato':
+                        $stats[$dest_name]['assegnati']++;
+                        break;
+                    case 'in_manutenzione':
+                        $stats[$dest_name]['in_manutenzione']++;
+                        break;
+                }
+            }
+        }
+        
+        return $stats;
+    }
+    
+    /**
+     * Utility: Trova tablet duplicati per IMEI
+     */
+    public function find_duplicate_imei() {
+        $tablets = $this->get_tablets();
+        $imei_map = array();
+        $duplicates = array();
+        
+        foreach ($tablets as $tablet) {
+            $imei = get_field('imei_tablet', $tablet->ID);
+            
+            if ($imei && $imei !== '') {
+                if (isset($imei_map[$imei])) {
+                    // Duplicato trovato
+                    if (!isset($duplicates[$imei])) {
+                        $duplicates[$imei] = array($imei_map[$imei]);
+                    }
+                    $duplicates[$imei][] = $tablet;
+                } else {
+                    $imei_map[$imei] = $tablet;
+                }
+            }
+        }
+        
+        return $duplicates;
+    }
+    
+    /**
+     * Utility: Verifica integrità dati tablet
+     */
+    public function verify_tablet_integrity($tablet_id = null) {
+        $tablets = $tablet_id ? array(get_post($tablet_id)) : $this->get_tablets();
+        $issues = array();
+        
+        foreach ($tablets as $tablet) {
+            if (!$tablet) continue;
+            
+            $tablet_issues = array();
+            
+            // Verifica IMEI
+            $imei = get_field('imei_tablet', $tablet->ID);
+            if ($imei && strlen($imei) !== 15) {
+                $tablet_issues[] = 'IMEI non valido (deve essere 15 cifre)';
+            }
+            
+            // Verifica logica SIM
+            $sim_inserita = get_field('sim_inserita', $tablet->ID);
+            $sim_attiva = get_field('sim_attiva', $tablet->ID);
+            
+            if ($sim_attiva && !$sim_inserita) {
+                $tablet_issues[] = 'SIM attiva ma non inserita';
+            }
+            
+            // Verifica stato
+            $stato = get_field('stato_dispositivo', $tablet->ID);
+            if (!$stato) {
+                $tablet_issues[] = 'Stato dispositivo mancante';
+            }
+            
+            if (!empty($tablet_issues)) {
+                $issues[$tablet->ID] = array(
+                    'title' => $tablet->post_title,
+                    'issues' => $tablet_issues
+                );
+            }
+        }
+        
+        return $issues;
+    }
+    
+    /**
+     * Utility: Export dati tablet per backup
+     */
+    public function export_tablets_data() {
+        $tablets = $this->get_tablets();
+        $export_data = array();
+        
+        foreach ($tablets as $tablet) {
+            $destinazione = get_field('dove', $tablet->ID);
+            
+            $export_data[] = array(
+                'id' => $tablet->ID,
+                'title' => $tablet->post_title,
+                'imei_tablet' => get_field('imei_tablet', $tablet->ID),
+                'stato_dispositivo' => get_field('stato_dispositivo', $tablet->ID),
+                'tipologia' => get_field('tipologia', $tablet->ID),
+                'data_di_carico' => get_field('data_di_carico', $tablet->ID),
+                'destinazione' => $destinazione ? $destinazione->name : '',
+                'modalita_kiosk' => get_field('modalita_kiosk', $tablet->ID) ? 1 : 0,
+                'sim_inserita' => get_field('sim_inserita', $tablet->ID) ? 1 : 0,
+                'sim_attiva' => get_field('sim_attiva', $tablet->ID) ? 1 : 0,
+                'sn_sim' => get_field('sn_sim', $tablet->ID),
+                'pin_sim' => get_field('pin_sim', $tablet->ID),
+                'puk_sim' => get_field('puk_sim', $tablet->ID),
+                'cover' => get_field('cover', $tablet->ID) ? 1 : 0,
+                'scatola' => get_field('scatola', $tablet->ID) ? 1 : 0,
+                'note_generali_tablet' => get_field('note_generali_tablet', $tablet->ID),
+                'created' => $tablet->post_date,
+                'modified' => $tablet->post_modified
+            );
+        }
+        
+        return $export_data;
     }
 }
