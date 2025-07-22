@@ -1,12 +1,9 @@
 <?php
 /**
- * Template per la modal di visualizzazione dettagli tablet
+ * Gestori AJAX per il plugin Warehouse Manager
  * 
- * Questo template può essere utilizzato sia nell'AJAX handler
- * sia come template standalone per rendering server-side.
- * 
- * Variabili disponibili:
- * $tablet_data - Array con tutti i dati del tablet
+ * Gestisce tutte le chiamate AJAX per modal, form Frontend Admin
+ * e operazioni sui tablet.
  */
 
 // Previeni accesso diretto
@@ -14,290 +11,277 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-// Assicurati che i dati del tablet siano disponibili
-if (empty($tablet_data)) {
-    ?>
-    <div class="mwm-error">
-        Nessun dato tablet disponibile per la visualizzazione.
-    </div>
-    <?php
-    return;
+/**
+ * Inizializza gli handler AJAX
+ */
+function mwm_init_ajax_handlers() {
+    // Handler per modal dettagli (mantenuto)
+    add_action('wp_ajax_mwm_get_tablet_details', 'mwm_ajax_get_tablet_details');
+    
+    // Nuovi handler per modal forms
+    add_action('wp_ajax_mwm_get_edit_form', 'mwm_ajax_get_edit_form');
+    add_action('wp_ajax_mwm_get_movement_form', 'mwm_ajax_get_movement_form'); 
+    add_action('wp_ajax_mwm_get_add_form', 'mwm_ajax_get_add_form');
+    
+    // Handler per azioni di gruppo
+    add_action('wp_ajax_mwm_bulk_action', 'mwm_ajax_bulk_action');
+    
+    // Handler per refresh dashboard dopo submit form
+    add_action('wp_ajax_mwm_refresh_dashboard', 'mwm_ajax_refresh_dashboard');
 }
 
-// Estrai dati per facilità d'uso
-$tablet_id = $tablet_data['tablet_title'] ?? 'Non disponibile';
-$stato = $tablet_data['stato_dispositivo'] ?? '';
-$tipologia = $tablet_data['tipologia'] ?? '';
-$imei = $tablet_data['imei_tablet'] ?? '';
-$data_carico = $tablet_data['data_di_carico'] ?? '';
-$ubicazione = $tablet_data['dove'] ?? null;
-$modalita_kiosk = $tablet_data['modalita_kiosk'] ?? false;
-$sim_inserita = $tablet_data['sim_inserita'] ?? false;
-$sim_attiva = $tablet_data['sim_attiva'] ?? false;
-$sn_sim = $tablet_data['sn_sim'] ?? '';
-$pin_sim = $tablet_data['pin_sim'] ?? '';
-$puk_sim = $tablet_data['puk_sim'] ?? '';
-$cover = $tablet_data['cover'] ?? false;
-$scatola = $tablet_data['scatola'] ?? false;
-$note = $tablet_data['note_generali_tablet'] ?? '';
-$post_date = $tablet_data['post_date'] ?? '';
-$post_modified = $tablet_data['post_modified'] ?? '';
-?>
+// Inizializza handler
+mwm_init_ajax_handlers();
 
-<div class="mwm-tablet-details">
+/**
+ * AJAX: Ottiene dettagli tablet per modal visualizzazione
+ */
+function mwm_ajax_get_tablet_details() {
+    $tablet_id = intval($_POST['tablet_id']);
     
-    <!-- Header con ID tablet -->
-    <div class="mwm-detail-header">
-        <h4><?php echo esc_html($tablet_id); ?></h4>
-        <div class="mwm-detail-meta">
-            <?php if ($post_date): ?>
-                <span><strong>Creato:</strong> <?php echo esc_html(date('d/m/Y H:i', strtotime($post_date))); ?></span>
-            <?php endif; ?>
-            <?php if ($post_modified && $post_modified !== $post_date): ?>
-                <span><strong>Modificato:</strong> <?php echo esc_html(date('d/m/Y H:i', strtotime($post_modified))); ?></span>
-            <?php endif; ?>
-        </div>
-    </div>
+    if (!$tablet_id || get_post_type($tablet_id) !== 'tablet') {
+        wp_send_json_error('ID tablet non valido');
+    }
     
-    <!-- Informazioni Principali -->
-    <div class="mwm-detail-section">
-        <h5>📋 Informazioni Principali</h5>
-        <div class="mwm-detail-grid">
-            <div class="mwm-detail-item">
-                <label>Stato Dispositivo:</label>
-                <span class="mwm-status status-<?php echo sanitize_html_class(strtolower($stato ?: 'non-definito')); ?>">
-                    <?php echo esc_html($stato ?: 'Non definito'); ?>
-                </span>
-            </div>
-            
-            <div class="mwm-detail-item">
-                <label>Tipologia:</label>
-                <span><?php echo esc_html($tipologia ?: '-'); ?></span>
-            </div>
-            
-            <div class="mwm-detail-item">
-                <label>IMEI:</label>
-                <span class="mwm-mono"><?php echo esc_html($imei ?: '-'); ?></span>
-            </div>
-            
-            <div class="mwm-detail-item">
-                <label>Data di Carico:</label>
-                <span><?php echo $data_carico ? esc_html(date('d/m/Y', strtotime($data_carico))) : '-'; ?></span>
-            </div>
-        </div>
-    </div>
+    // Ottieni tutti i dati del tablet
+    $tablet_data = mwm_get_complete_tablet_data($tablet_id);
     
-    <!-- Ubicazione Attuale -->
-    <div class="mwm-detail-section">
-        <h5>📍 Ubicazione</h5>
-        <div class="mwm-detail-item">
-            <label>Ubicazione Attuale:</label>
-            <span class="mwm-location-current">
-                <?php 
-                if ($ubicazione && is_object($ubicazione)) {
-                    echo esc_html($ubicazione->name);
-                } else {
-                    echo '<em style="color: #666;">Non assegnato</em>';
-                }
-                ?>
-            </span>
-        </div>
-    </div>
+    // Renderizza template
+    ob_start();
+    include(MWM_PLUGIN_PATH . 'templates/modal-tablet-view.php');
+    $html = ob_get_clean();
     
-    <!-- Configurazione -->
-    <div class="mwm-detail-section">
-        <h5>⚙️ Configurazione</h5>
-        <div class="mwm-detail-grid">
-            <div class="mwm-detail-item">
-                <label>Modalità Kiosk:</label>
-                <span class="mwm-status <?php echo $modalita_kiosk ? 'status-active' : 'status-inactive'; ?>">
-                    <?php echo $modalita_kiosk ? '✅ Attiva' : '❌ Disattiva'; ?>
-                </span>
-            </div>
-            
-            <div class="mwm-detail-item">
-                <label>Cover:</label>
-                <span class="mwm-status <?php echo $cover ? 'status-active' : 'status-inactive'; ?>">
-                    <?php echo $cover ? '✅ Presente' : '❌ Assente'; ?>
-                </span>
-            </div>
-            
-            <div class="mwm-detail-item">
-                <label>Scatola:</label>
-                <span class="mwm-status <?php echo $scatola ? 'status-active' : 'status-inactive'; ?>">
-                    <?php echo $scatola ? '✅ Presente' : '❌ Assente'; ?>
-                </span>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Informazioni SIM -->
-    <div class="mwm-detail-section">
-        <h5>📱 Informazioni SIM</h5>
-        <div class="mwm-detail-grid">
-            <div class="mwm-detail-item">
-                <label>SIM Inserita:</label>
-                <span class="mwm-status <?php echo $sim_inserita ? 'status-active' : 'status-inactive'; ?>">
-                    <?php echo $sim_inserita ? '✅ Sì' : '❌ No'; ?>
-                </span>
-            </div>
-            
-            <?php if ($sim_inserita): ?>
-                <div class="mwm-detail-item">
-                    <label>SIM Attiva:</label>
-                    <span class="mwm-status <?php echo $sim_attiva ? 'status-active' : 'status-inactive'; ?>">
-                        <?php echo $sim_attiva ? '✅ Sì' : '⚠️ No'; ?>
-                    </span>
-                </div>
-                
-                <?php if ($sn_sim): ?>
-                    <div class="mwm-detail-item">
-                        <label>SN SIM:</label>
-                        <span class="mwm-mono mwm-sensitive" title="Clicca per selezionare"><?php echo esc_html($sn_sim); ?></span>
-                    </div>
-                <?php endif; ?>
-                
-                <?php if ($pin_sim): ?>
-                    <div class="mwm-detail-item">
-                        <label>PIN SIM:</label>
-                        <span class="mwm-mono mwm-sensitive" title="Clicca per selezionare"><?php echo esc_html($pin_sim); ?></span>
-                    </div>
-                <?php endif; ?>
-                
-                <?php if ($puk_sim): ?>
-                    <div class="mwm-detail-item">
-                        <label>PUK SIM:</label>
-                        <span class="mwm-mono mwm-sensitive" title="Clicca per selezionare"><?php echo esc_html($puk_sim); ?></span>
-                    </div>
-                <?php endif; ?>
-                
-                <?php if (!$sn_sim && !$pin_sim && !$puk_sim): ?>
-                    <div class="mwm-detail-item">
-                        <label></label>
-                        <span style="font-style: italic; color: #666;">Nessun dettaglio SIM disponibile</span>
-                    </div>
-                <?php endif; ?>
-                
-            <?php else: ?>
-                <div class="mwm-detail-item">
-                    <label></label>
-                    <span style="font-style: italic; color: #666;">Nessuna SIM inserita</span>
-                </div>
-            <?php endif; ?>
-        </div>
-    </div>
-    
-    <!-- Note -->
-    <?php if ($note): ?>
-        <div class="mwm-detail-section">
-            <h5>📝 Note Generali</h5>
-            <div class="mwm-detail-notes">
-                <?php echo nl2br(esc_html($note)); ?>
-            </div>
-        </div>
-    <?php endif; ?>
-    
-    <!-- Statistiche Rapide -->
-    <div class="mwm-detail-section">
-        <h5>📊 Riepilogo Rapido</h5>
-        <div class="mwm-detail-grid">
-            <?php
-            // Calcola "punteggio completezza"
-            $completeness_score = 0;
-            $max_score = 10;
-            
-            if ($stato) $completeness_score++;
-            if ($tipologia) $completeness_score++;
-            if ($imei) $completeness_score++;
-            if ($data_carico) $completeness_score++;
-            if ($ubicazione) $completeness_score += 2; // Più importante
-            if ($modalita_kiosk !== null) $completeness_score++;
-            if ($sim_inserita !== null) $completeness_score++;
-            if ($cover !== null) $completeness_score++;
-            if ($scatola !== null) $completeness_score++;
-            
-            $completeness_percentage = round(($completeness_score / $max_score) * 100);
-            
-            // Stato configurazione
-            $config_status = 'Parziale';
-            $config_class = 'status-partial';
-            
-            if ($completeness_percentage >= 90) {
-                $config_status = 'Completa';
-                $config_class = 'status-active';
-            } elseif ($completeness_percentage < 50) {
-                $config_status = 'Incompleta';
-                $config_class = 'status-inactive';
-            }
-            ?>
-            
-            <div class="mwm-detail-item">
-                <label>Completezza Dati:</label>
-                <span class="mwm-status <?php echo $config_class; ?>">
-                    <?php echo $config_status; ?> (<?php echo $completeness_percentage; ?>%)
-                </span>
-            </div>
-            
-            <div class="mwm-detail-item">
-                <label>Pronto per Uso:</label>
-                <span class="mwm-status <?php echo ($stato === 'Disponibile' && $modalita_kiosk) ? 'status-active' : 'status-inactive'; ?>">
-                    <?php echo ($stato === 'Disponibile' && $modalita_kiosk) ? '✅ Sì' : '⚠️ No'; ?>
-                </span>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Azioni Rapide -->
-    <div class="mwm-detail-actions">
-        <a href="/modifica-tablet/?post_id=<?php echo esc_attr($tablet_data['tablet_id'] ?? ''); ?>" 
-           class="mwm-btn mwm-btn-primary">
-            ✏️ Modifica Tablet
-        </a>
-        <a href="/esegui-movimento/?post_id=<?php echo esc_attr($tablet_data['tablet_id'] ?? ''); ?>" 
-           class="mwm-btn mwm-btn-secondary">
-            📦 Registra Movimento
-        </a>
-        
-        <?php if ($ubicazione): ?>
-            <button class="mwm-btn mwm-btn-secondary" onclick="WarehouseManager.highlightRow(<?php echo esc_attr($tablet_data['tablet_id'] ?? '0'); ?>)">
-                📍 Evidenzia in Tabella
-            </button>
-        <?php endif; ?>
-    </div>
-    
-    <!-- Footer con suggerimenti -->
-    <?php if ($completeness_percentage < 80): ?>
-        <div style="margin-top: 20px; padding: 12px; background: #fff3cd; border-radius: 4px; border-left: 4px solid #ffc107;">
-            <strong>💡 Suggerimento:</strong> 
-            Completa le informazioni mancanti per migliorare la gestione del tablet:
-            <ul style="margin: 8px 0 0 20px; font-size: 13px;">
-                <?php if (!$stato): ?><li>Imposta stato dispositivo</li><?php endif; ?>
-                <?php if (!$tipologia): ?><li>Specifica tipologia tablet</li><?php endif; ?>
-                <?php if (!$imei): ?><li>Inserisci IMEI</li><?php endif; ?>
-                <?php if (!$ubicazione): ?><li>Assegna ubicazione attuale</li><?php endif; ?>
-                <?php if (!$data_carico): ?><li>Inserisci data di carico</li><?php endif; ?>
-            </ul>
-        </div>
-    <?php endif; ?>
-</div>
+    wp_send_json_success(array(
+        'html' => $html,
+        'tablet_title' => get_the_title($tablet_id)
+    ));
+}
 
-<script>
-// JavaScript specifico per la modal
-jQuery(document).ready(function($) {
-    // Seleziona automaticamente testo sensibile al click
-    $('.mwm-sensitive').on('click', function() {
-        this.select();
-        document.execCommand('copy');
+/**
+ * AJAX: Carica form di modifica tablet in modal
+ */
+function mwm_ajax_get_edit_form() {
+    $tablet_id = intval($_POST['tablet_id']);
+    
+    if (!$tablet_id || get_post_type($tablet_id) !== 'tablet') {
+        wp_send_json_error('ID tablet non valido');
+    }
+    
+    // Genera shortcode Frontend Admin con post_id
+    $shortcode = '[frontend_admin form=110 post_id="' . $tablet_id . '"]';
+    $form_html = do_shortcode($shortcode);
+    
+    wp_send_json_success(array(
+        'html' => $form_html,
+        'tablet_title' => get_the_title($tablet_id),
+        'tablet_id' => $tablet_id
+    ));
+}
+
+/**
+ * AJAX: Carica form movimento tablet in modal
+ */
+function mwm_ajax_get_movement_form() {
+    $tablet_id = intval($_POST['tablet_id']);
+    
+    if (!$tablet_id || get_post_type($tablet_id) !== 'tablet') {
+        wp_send_json_error('ID tablet non valido');
+    }
+    
+    // Genera shortcode Frontend Admin per movimento
+    $shortcode = '[frontend_admin form=125 post_id="' . $tablet_id . '"]';
+    $form_html = do_shortcode($shortcode);
+    
+    wp_send_json_success(array(
+        'html' => $form_html,
+        'tablet_title' => get_the_title($tablet_id),
+        'tablet_id' => $tablet_id
+    ));
+}
+
+/**
+ * AJAX: Carica form aggiunta nuovo tablet
+ */
+function mwm_ajax_get_add_form() {
+    // Genera shortcode Frontend Admin per nuovo tablet
+    $shortcode = '[frontend_admin form=204]';
+    $form_html = do_shortcode($shortcode);
+    
+    wp_send_json_success(array(
+        'html' => $form_html
+    ));
+}
+
+/**
+ * AJAX: Gestisce azioni di gruppo sui tablet
+ */
+function mwm_ajax_bulk_action() {
+    $action = sanitize_text_field($_POST['bulk_action']);
+    $tablet_ids = array_map('intval', $_POST['tablet_ids']);
+    
+    if (empty($tablet_ids) || empty($action)) {
+        wp_send_json_error('Parametri mancanti');
+    }
+    
+    $updated_count = 0;
+    
+    foreach ($tablet_ids as $tablet_id) {
+        if (get_post_type($tablet_id) !== 'tablet') {
+            continue;
+        }
         
-        // Feedback visivo
-        const originalBg = $(this).css('background-color');
-        $(this).css('background-color', '#d4edda');
-        setTimeout(() => {
-            $(this).css('background-color', originalBg);
-        }, 300);
+        $success = false;
+        
+        switch ($action) {
+            case 'kiosk_on':
+                $success = update_field('modalita_kiosk', 1, $tablet_id);
+                break;
+                
+            case 'kiosk_off':
+                $success = update_field('modalita_kiosk', 0, $tablet_id);
+                break;
+                
+            case 'sim_active_on':
+                update_field('sim_inserita', 1, $tablet_id);
+                $success = update_field('sim_attiva', 1, $tablet_id);
+                break;
+                
+            case 'sim_active_off':
+                $success = update_field('sim_attiva', 0, $tablet_id);
+                break;
+        }
+        
+        if ($success) {
+            $updated_count++;
+        }
+    }
+    
+    wp_send_json_success(array(
+        'message' => sprintf('Aggiornati %d tablet su %d selezionati', $updated_count, count($tablet_ids)),
+        'updated_count' => $updated_count
+    ));
+}
+
+/**
+ * AJAX: Refresh dashboard dopo submit form
+ */
+function mwm_ajax_refresh_dashboard() {
+    // Restituisci HTML aggiornato per statistiche e tabella
+    $tablets = mwm_get_all_tablets_for_dashboard();
+    
+    ob_start();
+    echo mwm_generate_tablet_stats($tablets);
+    $stats_html = ob_get_clean();
+    
+    ob_start();
+    if (empty($tablets)) {
+        echo '<tr><td colspan="9" class="mwm-no-data">Nessun tablet trovato.</td></tr>';
+    } else {
+        foreach ($tablets as $tablet) {
+            echo mwm_generate_tablet_row($tablet);
+        }
+    }
+    $table_html = ob_get_clean();
+    
+    wp_send_json_success(array(
+        'stats_html' => $stats_html,
+        'table_html' => $table_html
+    ));
+}
+
+/**
+ * Utility: Ottiene dati completi tablet per modal
+ */
+function mwm_get_complete_tablet_data($tablet_id) {
+    $tablet = get_post($tablet_id);
+    
+    if (!$tablet) {
+        return array();
+    }
+    
+    // Ottieni tutti i custom field
+    $tablet_data = array(
+        'tablet_id' => $tablet_id,
+        'tablet_title' => $tablet->post_title,
+        'post_date' => $tablet->post_date,
+        'post_modified' => $tablet->post_modified,
+        
+        // Campi ACF
+        'stato_dispositivo' => get_field('stato_dispositivo', $tablet_id),
+        'tipologia' => get_field('tipologia', $tablet_id),
+        'imei_tablet' => get_field('imei_tablet', $tablet_id),
+        'data_di_carico' => get_field('data_di_carico', $tablet_id),
+        'modalita_kiosk' => get_field('modalita_kiosk', $tablet_id),
+        'sim_inserita' => get_field('sim_inserita', $tablet_id),
+        'sim_attiva' => get_field('sim_attiva', $tablet_id),
+        'sn_sim' => get_field('sn_sim', $tablet_id),
+        'pin_sim' => get_field('pin_sim', $tablet_id),
+        'puk_sim' => get_field('puk_sim', $tablet_id),
+        'cover' => get_field('cover', $tablet_id),
+        'scatola' => get_field('scatola', $tablet_id),
+        'note_generali_tablet' => get_field('note_generali_tablet', $tablet_id),
+        
+        // Nuova tassonomia unificata
+        'dove' => get_field('dove', $tablet_id) // Oggetto termine
+    );
+    
+    return $tablet_data;
+}
+
+/**
+ * Hook Frontend Admin: Dopo salvataggio form
+ */
+function mwm_handle_frontend_admin_save($post_id, $form) {
+    // Hook chiamato automaticamente da Frontend Admin dopo ogni salvataggio
+    
+    if (get_post_type($post_id) === 'tablet') {
+        // Log dell'operazione
+        error_log('MWM: Tablet aggiornato via modal form - ID: ' . $post_id);
+        
+        // Aggiorna timestamp ultima modifica
+        update_field('ultima_modifica', current_time('mysql'), $post_id);
+        
+        // Trigger custom hook per estensioni future
+        do_action('mwm_tablet_updated_via_modal', $post_id, $form);
+    }
+}
+
+// Hook salvataggio Frontend Admin
+add_action('frontend_admin/forms/edit_post/after_save', 'mwm_handle_frontend_admin_save', 10, 2);
+add_action('frontend_admin/forms/new_post/after_save', 'mwm_handle_frontend_admin_save', 10, 2);
+
+/**
+ * Customizza output Frontend Admin per modal
+ */
+function mwm_customize_frontend_admin_for_modal($html, $form) {
+    // Aggiungi classi CSS per styling modal
+    $html = str_replace('<form', '<form class="mwm-modal-form"', $html);
+    
+    // Aggiungi JavaScript per gestire submit e chiusura modal
+    $js = "
+    <script>
+    jQuery(document).ready(function($) {
+        // Gestisce submit form nelle modal
+        $('.mwm-modal-form').on('submit', function(e) {
+            // Il form viene gestito da Frontend Admin
+            // Aggiungiamo solo feedback visivo
+            var submitBtn = $(this).find('button[type=\"submit\"], input[type=\"submit\"]');
+            submitBtn.prop('disabled', true).text('Salvando...');
+        });
+        
+        // Refresh dashboard dopo salvataggio riuscito
+        $(document).on('frontend_admin_form_success', function() {
+            setTimeout(function() {
+                WarehouseManager.refreshDashboard();
+                WarehouseManager.closeAllModals();
+                WarehouseManager.showSuccess('Operazione completata con successo');
+            }, 1000);
+        });
     });
+    </script>
+    ";
     
-    // Tooltip per dati sensibili
-    $('.mwm-sensitive').attr('title', 'Clicca per selezionare e copiare');
-});
-</script>
+    return $html . $js;
+}
+
+add_filter('frontend_admin_form_output', 'mwm_customize_frontend_admin_for_modal', 10, 2);
